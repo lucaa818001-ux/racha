@@ -33,6 +33,7 @@ const RANGOS = [
   { key: 'semana', label: '1 semana', dias: 7 },
   { key: 'mes', label: '1 mes', dias: 30 },
   { key: 'anio', label: '1 año', dias: 365 },
+  { key: 'todo', label: 'Todo', dias: null },
 ];
 
 export default function FisicoScreen() {
@@ -43,12 +44,11 @@ export default function FisicoScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [fotoSeleccionada, setFotoSeleccionada] = useState(null);
   const [comparacionVisible, setComparacionVisible] = useState(false);
-  const [rango, setRango] = useState('mes');
+  const [rango, setRango] = useState('todo');
 
   const cargarDatos = useCallback(async (uid) => {
     const hoy = new Date();
-    const desde = new Date();
-    desde.setDate(desde.getDate() - 365);
+    const desde = new Date(2000, 0, 1);
     const lista = await getBodyLogsForRange(uid, desde, hoy);
     setLogs(lista);
   }, []);
@@ -110,10 +110,13 @@ export default function FisicoScreen() {
   const logsRecientesPrimero = [...logs].reverse();
   const fotosDisponibles = logs.filter((l) => l.photo_path).length;
   const rangoActual = RANGOS.find((r) => r.key === rango);
-  const desdeRango = new Date();
-  desdeRango.setDate(desdeRango.getDate() - rangoActual.dias);
-  const desdeRangoStr = formatDate(desdeRango);
-  const logsDelRango = logs.filter((l) => l.date >= desdeRangoStr);
+  let logsDelRango = logs;
+  if (rangoActual.dias !== null) {
+    const desdeRango = new Date();
+    desdeRango.setDate(desdeRango.getDate() - rangoActual.dias);
+    const desdeRangoStr = formatDate(desdeRango);
+    logsDelRango = logs.filter((l) => l.date >= desdeRangoStr);
+  }
 
   return (
     <ScrollView
