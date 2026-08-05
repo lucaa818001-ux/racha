@@ -23,7 +23,18 @@ export async function getBodyLogsForRange(userId, fromDate, toDate) {
   return data;
 }
 
-export async function createBodyLog(userId, { date, weight, height, photoUri }) {
+export async function getBodyLogsConFoto(userId) {
+  const { data, error } = await supabase
+    .from('body_logs')
+    .select('id, date, photo_path')
+    .eq('user_id', userId)
+    .not('photo_path', 'is', null)
+    .order('date', { ascending: true });
+  if (error) throw error;
+  return data;
+}
+
+export async function createBodyLog(userId, { date, weight, height, photoUri, measurements }) {
   const fecha = formatDate(date);
   let photoPath = null;
 
@@ -40,7 +51,14 @@ export async function createBodyLog(userId, { date, weight, height, photoUri }) 
 
   const { data, error } = await supabase
     .from('body_logs')
-    .insert({ user_id: userId, date: fecha, weight, height, photo_path: photoPath })
+    .insert({
+      user_id: userId,
+      date: fecha,
+      weight,
+      height,
+      photo_path: photoPath,
+      measurements: measurements || null,
+    })
     .select()
     .single();
   if (error) throw error;
