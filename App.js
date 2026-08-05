@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { View, Image, Text, StyleSheet } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { View, Image, StyleSheet, Animated } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts, SpaceGrotesk_600SemiBold, SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-google-fonts/inter';
@@ -11,7 +11,8 @@ import { colors } from './src/theme/colors';
 export default function App() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [tiempoMinimoCumplido, setTiempoMinimoCumplido] = useState(false);
+  const [mostrarSplash, setMostrarSplash] = useState(true);
+  const splashOpacity = useRef(new Animated.Value(1)).current;
   const [fontsLoaded] = useFonts({
     SpaceGrotesk_600SemiBold,
     SpaceGrotesk_700Bold,
@@ -34,30 +35,40 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const temporizador = setTimeout(() => setTiempoMinimoCumplido(true), 1500);
+    if (loading || !fontsLoaded) return;
+    const temporizador = setTimeout(() => {
+      Animated.timing(splashOpacity, {
+        toValue: 0,
+        duration: 450,
+        useNativeDriver: true,
+      }).start(() => setMostrarSplash(false));
+    }, 1000);
     return () => clearTimeout(temporizador);
-  }, []);
-
-  if (loading || !fontsLoaded || !tiempoMinimoCumplido) {
-    return (
-      <View style={styles.splash}>
-        <StatusBar style="light" />
-        <Image source={require('./assets/icon.png')} style={styles.splashLogo} resizeMode="contain" />
-        {fontsLoaded && <Text style={styles.splashTitulo}>KeepIt</Text>}
-      </View>
-    );
-  }
+  }, [loading, fontsLoaded]);
 
   return (
-    <>
+    <View style={{ flex: 1 }}>
       <StatusBar style="light" />
-      {session ? <TabNavigator /> : <AuthScreen />}
-    </>
+      {!loading && fontsLoaded && (session ? <TabNavigator /> : <AuthScreen />)}
+      {mostrarSplash && (
+        <Animated.View style={[styles.splash, { opacity: splashOpacity }]} pointerEvents="none">
+          <Image
+            source={require('./assets/lockup-horizontal-dark.png')}
+            style={styles.splashLogo}
+            resizeMode="contain"
+          />
+        </Animated.View>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  splash: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
-  splashLogo: { width: 96, height: 96, marginBottom: 16 },
-  splashTitulo: { fontFamily: 'SpaceGrotesk_700Bold', fontSize: 24, color: colors.textPrimary },
+  splash: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#000000',
+  },
+  splashLogo: { width: '42%', aspectRatio: 1080 / 660 },
 });
