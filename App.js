@@ -11,6 +11,7 @@ import { colors } from './src/theme/colors';
 export default function App() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [tiempoMinimoCumplido, setTiempoMinimoCumplido] = useState(false);
   const [fontsLoaded] = useFonts({
     SpaceGrotesk_600SemiBold,
     SpaceGrotesk_700Bold,
@@ -32,7 +33,12 @@ export default function App() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  if (loading || !fontsLoaded) {
+  useEffect(() => {
+    const temporizador = setTimeout(() => setTiempoMinimoCumplido(true), 1500);
+    return () => clearTimeout(temporizador);
+  }, []);
+
+  if (loading || !fontsLoaded || !tiempoMinimoCumplido) {
     return (
       <View style={styles.splash}>
         <StatusBar style="light" />
