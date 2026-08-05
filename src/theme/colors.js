@@ -14,3 +14,11 @@ export const colors = {
     violeta: '#8B5CF6',
   },
 };
+
+export function getRachaColor(rachaDia) {
+  if (rachaDia >= 28) return colors.racha.violeta;
+  if (rachaDia >= 21) return colors.racha.rojo;
+  if (rachaDia >= 14) return colors.racha.naranja;
+  if (rachaDia >= 7) return colors.racha.amarillo;
+  return colors.racha.verde;
+}
