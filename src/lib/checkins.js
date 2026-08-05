@@ -61,6 +61,18 @@ export async function createCheckin(userId, photoUri) {
   return data;
 }
 
+export async function getRachaMaxima(userId) {
+  const { data, error } = await supabase
+    .from('gym_checkins')
+    .select('racha_dia')
+    .eq('user_id', userId)
+    .order('racha_dia', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? data.racha_dia : 0;
+}
+
 export async function getSignedPhotoUrl(photoPath) {
   const { data, error } = await supabase.storage
     .from(BUCKET)
