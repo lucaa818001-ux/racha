@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View, Image, Text, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts, SpaceGrotesk_600SemiBold, SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-google-fonts/inter';
@@ -34,9 +34,10 @@ export default function App() {
 
   if (loading || !fontsLoaded) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
+      <View style={styles.splash}>
         <StatusBar style="light" />
-        <ActivityIndicator size="large" color={colors.cobalto} />
+        <Image source={require('./assets/icon.png')} style={styles.splashLogo} resizeMode="contain" />
+        {fontsLoaded && <Text style={styles.splashTitulo}>KeepIt</Text>}
       </View>
     );
   }
@@ -48,3 +49,9 @@ export default function App() {
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  splash: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
+  splashLogo: { width: 96, height: 96, marginBottom: 16 },
+  splashTitulo: { fontFamily: 'SpaceGrotesk_700Bold', fontSize: 24, color: colors.textPrimary },
+});
