@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native';
+import { colors } from '../theme/colors';
 
 export default function RachaScreen() {
   return (
@@ -9,6 +10,6 @@ export default function RachaScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  text: { fontSize: 20 },
+  container: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background },
+  text: { fontSize: 24, fontFamily: 'SpaceGrotesk_700Bold', color: colors.textPrimary },
 });

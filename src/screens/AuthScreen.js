@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, Alert } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
 import { supabase } from '../lib/supabase';
+import { colors } from '../theme/colors';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -54,6 +55,7 @@ export default function AuthScreen() {
       <TextInput
         style={styles.input}
         placeholder="Email"
+        placeholderTextColor={colors.textTertiary}
         autoCapitalize="none"
         keyboardType="email-address"
         value={email}
@@ -62,34 +64,62 @@ export default function AuthScreen() {
       <TextInput
         style={styles.input}
         placeholder="Contraseña"
+        placeholderTextColor={colors.textTertiary}
         secureTextEntry
         value={password}
         onChangeText={setPassword}
       />
-      <Button
-        title={loading ? 'Cargando...' : modoRegistro ? 'Crear cuenta' : 'Iniciar sesión'}
-        onPress={handleSubmit}
-        disabled={loading}
-      />
+      <Pressable style={[styles.button, styles.primaryButton]} onPress={handleSubmit} disabled={loading}>
+        <Text style={styles.primaryButtonText}>
+          {loading ? 'Cargando...' : modoRegistro ? 'Crear cuenta' : 'Iniciar sesión'}
+        </Text>
+      </Pressable>
       <Text style={styles.toggle} onPress={() => setModoRegistro(!modoRegistro)}>
         {modoRegistro ? '¿Ya tenés cuenta? Iniciar sesión' : '¿No tenés cuenta? Crear una'}
       </Text>
       <View style={styles.separator} />
-      <Button title="Continuar con Google" onPress={handleGoogleSignIn} disabled={loading} color="#DB4437" />
+      <Pressable style={styles.button} onPress={handleGoogleSignIn} disabled={loading}>
+        <Text style={styles.secondaryButtonText}>Continuar con Google</Text>
+      </Pressable>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 24 },
-  title: { fontSize: 24, marginBottom: 24, textAlign: 'center' },
+  container: { flex: 1, justifyContent: 'center', padding: 22, backgroundColor: colors.background },
+  title: {
+    fontSize: 28,
+    marginBottom: 24,
+    textAlign: 'center',
+    fontFamily: 'SpaceGrotesk_700Bold',
+    color: colors.textPrimary,
+  },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 12,
+    borderColor: colors.border,
+    borderRadius: 14,
+    padding: 14,
     marginBottom: 12,
+    backgroundColor: colors.surface,
+    color: colors.textPrimary,
+    fontFamily: 'Inter_400Regular',
   },
-  toggle: { marginTop: 16, textAlign: 'center', color: '#2563eb' },
-  separator: { height: 24 },
+  button: {
+    borderRadius: 20,
+    paddingVertical: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  primaryButton: { backgroundColor: colors.cobalto, borderWidth: 0 },
+  primaryButtonText: { fontFamily: 'Inter_600SemiBold', color: '#fff', fontSize: 15 },
+  secondaryButtonText: { fontFamily: 'Inter_600SemiBold', color: colors.textPrimary, fontSize: 15 },
+  toggle: {
+    marginTop: 16,
+    textAlign: 'center',
+    color: colors.cobalto,
+    fontFamily: 'Inter_500Medium',
+  },
+  separator: { height: 20 },
 });
