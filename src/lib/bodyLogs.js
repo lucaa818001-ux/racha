@@ -23,24 +23,12 @@ export async function getBodyLogsForRange(userId, fromDate, toDate) {
   return data;
 }
 
-export async function getTodayBodyLog(userId) {
-  const hoy = formatDate(new Date());
-  const { data, error } = await supabase
-    .from('body_logs')
-    .select('id, date, weight, height, photo_path')
-    .eq('user_id', userId)
-    .eq('date', hoy)
-    .maybeSingle();
-  if (error) throw error;
-  return data;
-}
-
-export async function createBodyLog(userId, { weight, height, photoUri }) {
-  const hoy = formatDate(new Date());
+export async function createBodyLog(userId, { date, weight, height, photoUri }) {
+  const fecha = formatDate(date);
   let photoPath = null;
 
   if (photoUri) {
-    photoPath = `${userId}/${hoy}.jpg`;
+    photoPath = `${userId}/${Date.now()}.jpg`;
     const base64 = await FileSystem.readAsStringAsync(photoUri, {
       encoding: FileSystem.EncodingType.Base64,
     });
@@ -52,11 +40,19 @@ export async function createBodyLog(userId, { weight, height, photoUri }) {
 
   const { data, error } = await supabase
     .from('body_logs')
-    .insert({ user_id: userId, date: hoy, weight, height, photo_path: photoPath })
+    .insert({ user_id: userId, date: fecha, weight, height, photo_path: photoPath })
     .select()
     .single();
   if (error) throw error;
   return data;
+}
+
+export async function deleteBodyLog(logId, photoPath) {
+  if (photoPath) {
+    await supabase.storage.from(BUCKET).remove([photoPath]);
+  }
+  const { error } = await supabase.from('body_logs').delete().eq('id', logId);
+  if (error) throw error;
 }
 
 export async function getSignedBodyPhotoUrl(photoPath) {

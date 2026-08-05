@@ -3,7 +3,7 @@ import { View, Text, Pressable, StyleSheet, Alert, ActivityIndicator, ScrollView
 import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../lib/supabase';
-import { getCheckinsForRange, createCheckin, getRachaMaxima } from '../lib/checkins';
+import { getCheckinsForRange, createCheckin, getRachaMaxima, getSignedPhotoUrl } from '../lib/checkins';
 import { calcularRachaActual } from '../lib/rachaCalculo';
 import { calcularEstadisticas } from '../lib/estadisticas';
 import { sincronizarRecordatorios } from '../lib/recordatorio';
@@ -196,6 +196,7 @@ export default function RachaScreen() {
       <PhotoViewerModal
         visible={!!fotoSeleccionada}
         photoPath={fotoSeleccionada}
+        getSignedUrl={getSignedPhotoUrl}
         onClose={() => setFotoSeleccionada(null)}
       />
     </ScrollView>

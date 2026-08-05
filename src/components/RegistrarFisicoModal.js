@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Modal, View, Text, TextInput, Pressable, StyleSheet, Alert } from 'react-native';
+import { Modal, View, Text, TextInput, Pressable, StyleSheet, Alert, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { colors } from '../theme/colors';
 
 export default function RegistrarFisicoModal({ visible, alturaInicial, onGuardar, onClose }) {
+  const [fecha, setFecha] = useState(new Date());
   const [peso, setPeso] = useState('');
   const [altura, setAltura] = useState(alturaInicial ? String(alturaInicial) : '');
   const [photoUri, setPhotoUri] = useState(null);
@@ -39,9 +41,10 @@ export default function RegistrarFisicoModal({ visible, alturaInicial, onGuardar
   async function handleGuardar() {
     setGuardando(true);
     try {
-      await onGuardar({ weight: Number(peso), height: Number(altura), photoUri });
+      await onGuardar({ date: fecha, weight: Number(peso), height: Number(altura), photoUri });
       setPeso('');
       setPhotoUri(null);
+      setFecha(new Date());
     } catch (e) {
       console.error('Error al guardar registro físico:', e.message, e);
       Alert.alert('Error', 'No se pudo guardar, intentá de nuevo.');
@@ -54,7 +57,18 @@ export default function RegistrarFisicoModal({ visible, alturaInicial, onGuardar
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
         <View style={styles.card}>
-          <Text style={styles.titulo}>Registrar hoy</Text>
+          <Text style={styles.titulo}>Registrar</Text>
+          <View style={styles.fechaFila}>
+            <Text style={styles.fechaTexto}>Fecha</Text>
+            <DateTimePicker
+              value={fecha}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'compact' : 'default'}
+              themeVariant="dark"
+              maximumDate={new Date()}
+              onChange={(event, valor) => valor && setFecha(valor)}
+            />
+          </View>
           <TextInput
             style={styles.input}
             placeholder="Peso (kg)"
@@ -103,6 +117,13 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlign: 'center',
   },
+  fechaFila: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  fechaTexto: { fontFamily: 'Inter_500Medium', color: colors.textPrimary, fontSize: 15 },
   input: {
     borderWidth: 1,
     borderColor: colors.border,

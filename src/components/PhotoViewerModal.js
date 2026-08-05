@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Modal, View, Image, Text, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
-import { getSignedPhotoUrl } from '../lib/checkins';
 import { colors } from '../theme/colors';
 
-export default function PhotoViewerModal({ visible, photoPath, onClose }) {
+export default function PhotoViewerModal({ visible, photoPath, getSignedUrl, onClose }) {
   const [url, setUrl] = useState(null);
   const [error, setError] = useState(null);
 
@@ -11,10 +10,10 @@ export default function PhotoViewerModal({ visible, photoPath, onClose }) {
     if (!visible || !photoPath) return;
     setUrl(null);
     setError(null);
-    getSignedPhotoUrl(photoPath)
+    getSignedUrl(photoPath)
       .then(setUrl)
       .catch(() => setError('No se pudo cargar la foto'));
-  }, [visible, photoPath]);
+  }, [visible, photoPath, getSignedUrl]);
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
