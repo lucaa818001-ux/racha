@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
   filaCompacta: { justifyContent: 'flex-start', marginBottom: 2 },
   diaSemana: { width: 40, textAlign: 'center', color: colors.textTertiary, fontFamily: 'Inter_500Medium' },
   celda: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  celdaCompacta: { width: 9, height: 9, borderRadius: 2, marginRight: 2 },
+  celdaCompacta: { width: 11, height: 11, borderRadius: 3, marginRight: 3 },
   celdaHoy: { borderWidth: 2, borderColor: '#fff' },
   numeroDia: { color: colors.textPrimary, fontFamily: 'Inter_500Medium', fontSize: 13 },
 });
