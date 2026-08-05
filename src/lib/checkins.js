@@ -1,3 +1,5 @@
+import * as FileSystem from 'expo-file-system/legacy';
+import { decode } from 'base64-arraybuffer';
 import { supabase } from './supabase';
 import { calcularRachaActual } from './rachaCalculo';
 
@@ -42,11 +44,12 @@ export async function createCheckin(userId, photoUri) {
   const rachaDia = calcularRachaActual(recientes.map((c) => c.date)) + 1;
 
   const photoPath = `${userId}/${hoy}.jpg`;
-  const response = await fetch(photoUri);
-  const blob = await response.blob();
+  const base64 = await FileSystem.readAsStringAsync(photoUri, {
+    encoding: FileSystem.EncodingType.Base64,
+  });
   const { error: uploadError } = await supabase.storage
     .from(BUCKET)
-    .upload(photoPath, blob, { contentType: 'image/jpeg', upsert: true });
+    .upload(photoPath, decode(base64), { contentType: 'image/jpeg', upsert: true });
   if (uploadError) throw uploadError;
 
   const { data, error } = await supabase

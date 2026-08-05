@@ -18,17 +18,37 @@ export default function PhotoViewerModal({ visible, photoPath, onClose }) {
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={styles.overlay} onPress={onClose}>
-        {error && <Text style={styles.error}>{error}</Text>}
-        {!error && !url && <ActivityIndicator size="large" color={colors.cobalto} />}
-        {url && <Image source={{ uri: url }} style={styles.image} resizeMode="contain" />}
-      </Pressable>
+      <View style={styles.overlay}>
+        <Pressable style={styles.cerrar} onPress={onClose} hitSlop={12}>
+          <Text style={styles.cerrarTexto}>✕ Volver</Text>
+        </Pressable>
+        <Pressable style={styles.contenido} onPress={onClose}>
+          {error && <Text style={styles.error}>{error}</Text>}
+          {!error && !url && <ActivityIndicator size="large" color={colors.cobalto} />}
+          {url && (
+            <View style={styles.marco}>
+              <Image source={{ uri: url }} style={styles.image} resizeMode="cover" />
+            </View>
+          )}
+        </Pressable>
+      </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', alignItems: 'center', justifyContent: 'center' },
-  image: { width: '90%', height: '80%' },
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)' },
+  cerrar: { position: 'absolute', top: 60, left: 22, zIndex: 1 },
+  cerrarTexto: { color: colors.textPrimary, fontFamily: 'Inter_600SemiBold', fontSize: 16 },
+  contenido: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  marco: {
+    width: '85%',
+    height: '75%',
+    borderRadius: 24,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  image: { width: '100%', height: '100%' },
   error: { color: colors.textPrimary, fontFamily: 'Inter_500Medium' },
 });
