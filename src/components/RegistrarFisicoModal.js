@@ -10,6 +10,10 @@ export default function RegistrarFisicoModal({ visible, alturaInicial, onGuardar
   const [altura, setAltura] = useState(alturaInicial ? String(alturaInicial) : '');
   const [photoUri, setPhotoUri] = useState(null);
   const [guardando, setGuardando] = useState(false);
+  const [mostrarMedidas, setMostrarMedidas] = useState(false);
+  const [cintura, setCintura] = useState('');
+  const [brazo, setBrazo] = useState('');
+  const [pierna, setPierna] = useState('');
 
   const pesoValido = peso.trim() !== '' && !Number.isNaN(Number(peso));
   const alturaValida = altura.trim() !== '' && !Number.isNaN(Number(altura));
@@ -41,10 +45,25 @@ export default function RegistrarFisicoModal({ visible, alturaInicial, onGuardar
   async function handleGuardar() {
     setGuardando(true);
     try {
-      await onGuardar({ date: fecha, weight: Number(peso), height: Number(altura), photoUri });
+      const measurements = {};
+      if (cintura.trim() !== '' && !Number.isNaN(Number(cintura))) measurements.cintura = Number(cintura);
+      if (brazo.trim() !== '' && !Number.isNaN(Number(brazo))) measurements.brazo = Number(brazo);
+      if (pierna.trim() !== '' && !Number.isNaN(Number(pierna))) measurements.pierna = Number(pierna);
+
+      await onGuardar({
+        date: fecha,
+        weight: Number(peso),
+        height: Number(altura),
+        photoUri,
+        measurements: Object.keys(measurements).length > 0 ? measurements : null,
+      });
       setPeso('');
       setPhotoUri(null);
       setFecha(new Date());
+      setCintura('');
+      setBrazo('');
+      setPierna('');
+      setMostrarMedidas(false);
     } catch (e) {
       console.error('Error al guardar registro físico:', e.message, e);
       Alert.alert('Error', 'No se pudo guardar, intentá de nuevo.');
@@ -88,6 +107,39 @@ export default function RegistrarFisicoModal({ visible, alturaInicial, onGuardar
           <Pressable style={styles.fotoButton} onPress={elegirOrigenFoto}>
             <Text style={styles.fotoButtonTexto}>{photoUri ? 'Foto lista ✓' : 'Agregar foto (opcional)'}</Text>
           </Pressable>
+          <Pressable style={styles.fotoButton} onPress={() => setMostrarMedidas(!mostrarMedidas)}>
+            <Text style={styles.fotoButtonTexto}>
+              {mostrarMedidas ? 'Ocultar medidas' : 'Agregar medidas (opcional)'}
+            </Text>
+          </Pressable>
+          {mostrarMedidas && (
+            <>
+              <TextInput
+                style={styles.input}
+                placeholder="Cintura (cm)"
+                placeholderTextColor={colors.textTertiary}
+                keyboardType="decimal-pad"
+                value={cintura}
+                onChangeText={setCintura}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Brazo (cm)"
+                placeholderTextColor={colors.textTertiary}
+                keyboardType="decimal-pad"
+                value={brazo}
+                onChangeText={setBrazo}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Pierna (cm)"
+                placeholderTextColor={colors.textTertiary}
+                keyboardType="decimal-pad"
+                value={pierna}
+                onChangeText={setPierna}
+              />
+            </>
+          )}
           <Pressable
             style={[
               styles.guardarButton,
