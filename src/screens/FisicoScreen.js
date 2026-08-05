@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
+  Dimensions,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
@@ -15,7 +16,24 @@ import { getBodyLogsForRange, createBodyLog, deleteBodyLog, getSignedBodyPhotoUr
 import WeightChart from '../components/WeightChart';
 import RegistrarFisicoModal from '../components/RegistrarFisicoModal';
 import PhotoViewerModal from '../components/PhotoViewerModal';
+import ComparacionFotosModal from '../components/ComparacionFotosModal';
+import { calcularIMC } from '../lib/imc';
 import { colors } from '../theme/colors';
+
+const ANCHO_GRAFICO = Dimensions.get('window').width - 44 - 32;
+
+function formatDate(d) {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+const RANGOS = [
+  { key: 'semana', label: '1 semana', dias: 7 },
+  { key: 'mes', label: '1 mes', dias: 30 },
+  { key: 'anio', label: '1 año', dias: 365 },
+];
 
 export default function FisicoScreen() {
   const [userId, setUserId] = useState(null);
@@ -24,11 +42,13 @@ export default function FisicoScreen() {
   const [refrescando, setRefrescando] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [fotoSeleccionada, setFotoSeleccionada] = useState(null);
+  const [comparacionVisible, setComparacionVisible] = useState(false);
+  const [rango, setRango] = useState('mes');
 
   const cargarDatos = useCallback(async (uid) => {
     const hoy = new Date();
     const desde = new Date();
-    desde.setDate(desde.getDate() - 84);
+    desde.setDate(desde.getDate() - 365);
     const lista = await getBodyLogsForRange(uid, desde, hoy);
     setLogs(lista);
   }, []);
@@ -57,8 +77,8 @@ export default function FisicoScreen() {
     }
   }
 
-  async function handleGuardar({ date, weight, height, photoUri }) {
-    await createBodyLog(userId, { date, weight, height, photoUri });
+  async function handleGuardar({ date, weight, height, photoUri, measurements }) {
+    await createBodyLog(userId, { date, weight, height, photoUri, measurements });
     await cargarDatos(userId);
     setModalVisible(false);
   }
@@ -88,6 +108,12 @@ export default function FisicoScreen() {
   const pesoActual = logs.length > 0 ? logs[logs.length - 1].weight : null;
   const ultimaAltura = logs.length > 0 ? logs[logs.length - 1].height : null;
   const logsRecientesPrimero = [...logs].reverse();
+  const fotosDisponibles = logs.filter((l) => l.photo_path).length;
+  const rangoActual = RANGOS.find((r) => r.key === rango);
+  const desdeRango = new Date();
+  desdeRango.setDate(desdeRango.getDate() - rangoActual.dias);
+  const desdeRangoStr = formatDate(desdeRango);
+  const logsDelRango = logs.filter((l) => l.date >= desdeRangoStr);
 
   return (
     <ScrollView
@@ -102,9 +128,32 @@ export default function FisicoScreen() {
         <Text style={styles.pesoNumero}>{pesoActual ?? '--'}</Text>
         <Text style={styles.pesoUnidad}>kg</Text>
       </View>
-      <WeightChart logs={logs} />
+      {pesoActual !== null && (
+        <Text style={styles.imcTexto}>IMC: {calcularIMC(pesoActual, ultimaAltura)}</Text>
+      )}
+      <View style={styles.rangoFila}>
+        {RANGOS.map((opcion) => (
+          <Pressable
+            key={opcion.key}
+            onPress={() => setRango(opcion.key)}
+            style={[styles.rangoBoton, rango === opcion.key && styles.rangoBotonActivo]}
+          >
+            <Text style={styles.rangoBotonTexto}>{opcion.label}</Text>
+          </Pressable>
+        ))}
+      </View>
+      <WeightChart logs={logsDelRango} ancho={ANCHO_GRAFICO} />
       <Pressable style={styles.boton} onPress={() => setModalVisible(true)}>
         <Text style={styles.botonTexto}>Registrar</Text>
+      </Pressable>
+      <Pressable
+        style={[styles.botonSecundario, fotosDisponibles < 2 && styles.botonDeshabilitado]}
+        disabled={fotosDisponibles < 2}
+        onPress={() => setComparacionVisible(true)}
+      >
+        <Text style={styles.botonSecundarioTexto}>
+          {fotosDisponibles < 2 ? 'Necesitás al menos 2 fotos para comparar' : 'Comparar fotos'}
+        </Text>
       </Pressable>
 
       <Text style={styles.subtitulo}>Historial</Text>
@@ -118,7 +167,8 @@ export default function FisicoScreen() {
           <View>
             <Text style={styles.filaFecha}>{log.date}</Text>
             <Text style={styles.filaDetalle}>
-              {log.weight} kg · {log.height} cm{log.photo_path ? ' · con foto' : ''}
+              {log.weight} kg · {log.height} cm · IMC {calcularIMC(log.weight, log.height)}
+              {log.photo_path ? ' · con foto' : ''}
             </Text>
           </View>
           <Pressable onPress={() => handleBorrar(log)} hitSlop={12}>
@@ -139,6 +189,11 @@ export default function FisicoScreen() {
         getSignedUrl={getSignedBodyPhotoUrl}
         onClose={() => setFotoSeleccionada(null)}
       />
+      <ComparacionFotosModal
+        visible={comparacionVisible}
+        userId={userId}
+        onClose={() => setComparacionVisible(false)}
+      />
     </ScrollView>
   );
 }
@@ -150,8 +205,22 @@ const styles = StyleSheet.create({
   pesoFila: { flexDirection: 'row', alignItems: 'baseline', marginBottom: 8 },
   pesoNumero: { fontSize: 44, fontFamily: 'SpaceGrotesk_700Bold', color: colors.textPrimary, marginRight: 8 },
   pesoUnidad: { fontSize: 18, fontFamily: 'Inter_400Regular', color: colors.textSecondary },
+  imcTexto: { fontFamily: 'Inter_400Regular', color: colors.textSecondary, marginBottom: 4 },
+  rangoFila: { flexDirection: 'row', marginTop: 12, backgroundColor: colors.surface, borderRadius: 12, padding: 4 },
+  rangoBoton: { flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: 'center' },
+  rangoBotonActivo: { backgroundColor: colors.cobalto },
+  rangoBotonTexto: { fontFamily: 'Inter_500Medium', color: colors.textPrimary, fontSize: 13 },
   boton: { marginTop: 8, borderRadius: 20, paddingVertical: 16, alignItems: 'center', backgroundColor: colors.cobalto },
   botonTexto: { fontFamily: 'Inter_600SemiBold', color: '#fff', fontSize: 16 },
+  botonSecundario: {
+    marginTop: 12,
+    borderRadius: 20,
+    paddingVertical: 14,
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+  },
+  botonDeshabilitado: { opacity: 0.5 },
+  botonSecundarioTexto: { fontFamily: 'Inter_500Medium', color: colors.textPrimary, fontSize: 14 },
   subtitulo: {
     fontFamily: 'SpaceGrotesk_600SemiBold',
     fontSize: 18,
