@@ -52,11 +52,7 @@ export default function App() {
       {!loading && fontsLoaded && (session ? <TabNavigator /> : <AuthScreen />)}
       {mostrarSplash && (
         <Animated.View style={[styles.splash, { opacity: splashOpacity }]} pointerEvents="none">
-          <Image
-            source={require('./assets/lockup-horizontal-dark.png')}
-            style={styles.splashLogo}
-            resizeMode="contain"
-          />
+          <Image source={require('./assets/icon.png')} style={styles.splashLogo} resizeMode="contain" />
         </Animated.View>
       )}
     </View>
@@ -70,5 +66,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#000000',
   },
-  splashLogo: { width: '42%', aspectRatio: 1080 / 660 },
+  splashLogo: { width: 140, height: 140 },
 });
