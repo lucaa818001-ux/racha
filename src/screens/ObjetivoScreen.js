@@ -139,8 +139,9 @@ export default function ObjetivoScreen() {
       `Días que te tomó: ${dias}\n` +
       `Promedio semanal: ${ritmo !== null ? `${Math.abs(ritmo)}kg/semana` : 'no calculado'}`;
     Alert.alert('¡Objetivo completado! 🏆', resumen, [
+      { text: 'Ahora no', style: 'cancel' },
       {
-        text: 'Genial',
+        text: 'Confirmar',
         onPress: async () => {
           await completeGoal(goal.id);
           await cargarDatos(userId);
@@ -157,6 +158,7 @@ export default function ObjetivoScreen() {
       yaFesteje.current = goal.id;
       escalaCelebracion.setValue(0.6);
       Animated.spring(escalaCelebracion, { toValue: 1, friction: 3, useNativeDriver: true }).start();
+      handleCompletar();
     }
   }, [goal, logs]);
 
@@ -178,8 +180,8 @@ export default function ObjetivoScreen() {
     >
       <View style={styles.encabezadoFila}>
         <Text style={styles.titulo}>Objetivo</Text>
-        <Pressable onPress={() => setHistorialVisible(true)}>
-          <Text style={styles.historialBoton}>Historial</Text>
+        <Pressable style={styles.historialBoton} onPress={() => setHistorialVisible(true)}>
+          <Text style={styles.historialIcono}>📜</Text>
         </Pressable>
       </View>
       {!goal ? (
@@ -213,11 +215,6 @@ export default function ObjetivoScreen() {
                 </Text>
                 <Text style={styles.motivacional}>{mensajeMotivacional(progreso)}</Text>
                 {progreso >= 100 && <Text style={styles.confeti}>🎉 🎊 🥳 🎊 🎉</Text>}
-                {progreso >= 100 && (
-                  <Pressable style={styles.botonCompletar} onPress={handleCompletar}>
-                    <Text style={styles.botonCompletarTexto}>Dar por completado</Text>
-                  </Pressable>
-                )}
                 <View style={styles.statsFila}>
                   <View style={styles.stat}>
                     <Text style={styles.statNumero}>{pesoActual}kg</Text>
@@ -278,7 +275,13 @@ const styles = StyleSheet.create({
   center: { flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
   titulo: { fontSize: 28, fontFamily: 'SpaceGrotesk_700Bold', color: colors.textPrimary },
   encabezadoFila: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  historialBoton: { fontFamily: 'Inter_500Medium', color: colors.cobalto, fontSize: 14 },
+  historialBoton: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+  historialIcono: { fontSize: 22 },
   sinObjetivo: { fontFamily: 'Inter_400Regular', color: colors.textSecondary },
   boton: { borderRadius: 20, paddingVertical: 16, alignItems: 'center', backgroundColor: colors.cobalto },
   botonTexto: { fontFamily: 'Inter_600SemiBold', color: '#fff', fontSize: 16 },
@@ -288,14 +291,6 @@ const styles = StyleSheet.create({
   progresoDetalle: { fontFamily: 'Inter_400Regular', color: colors.textSecondary, marginBottom: 4 },
   motivacional: { fontFamily: 'Inter_600SemiBold', fontSize: 16, color: colors.cobalto, marginBottom: 8 },
   confeti: { fontSize: 22, marginBottom: 16 },
-  botonCompletar: {
-    borderRadius: 20,
-    paddingVertical: 14,
-    alignItems: 'center',
-    backgroundColor: colors.cobalto,
-    marginBottom: 16,
-  },
-  botonCompletarTexto: { fontFamily: 'Inter_600SemiBold', color: '#fff', fontSize: 15 },
   statsFila: { flexDirection: 'row', marginBottom: 8 },
   stat: { flex: 1, alignItems: 'center' },
   statNumero: { fontFamily: 'SpaceGrotesk_600SemiBold', fontSize: 18, color: colors.textPrimary },

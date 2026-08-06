@@ -10,9 +10,11 @@ const ANCHO_GRAFICO = Dimensions.get('window').width - 44 - 32;
 export default function HistorialObjetivosModal({ visible, userId, onClose }) {
   const [historial, setHistorial] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const [seleccionado, setSeleccionado] = useState(null);
 
   useEffect(() => {
     if (!visible) return;
+    setSeleccionado(null);
     setCargando(true);
     getGoalHistory(userId).then(async (goals) => {
       const conLogs = await Promise.all(
@@ -34,29 +36,50 @@ export default function HistorialObjetivosModal({ visible, userId, onClose }) {
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <View style={styles.contenedor}>
         <View style={styles.encabezado}>
-          <Text style={styles.titulo}>Historial de objetivos</Text>
+          {seleccionado ? (
+            <Pressable onPress={() => setSeleccionado(null)} hitSlop={12}>
+              <Text style={styles.volver}>‹ Historial</Text>
+            </Pressable>
+          ) : (
+            <Text style={styles.titulo}>Historial de objetivos</Text>
+          )}
           <Pressable onPress={onClose} hitSlop={12}>
             <Text style={styles.cerrar}>✕</Text>
           </Pressable>
         </View>
         {cargando ? (
           <ActivityIndicator size="large" color={colors.cobalto} style={{ marginTop: 40 }} />
+        ) : seleccionado ? (
+          <ScrollView contentContainerStyle={{ padding: 22 }}>
+            <Text style={styles.itemTitulo}>
+              {seleccionado.goal.status === 'completado' ? '🏆 Completado' : '✕ Cancelado'} ·{' '}
+              {seleccionado.goal.type === 'bajar' ? 'Bajar' : 'Subir'} de {seleccionado.goal.start_value}kg a{' '}
+              {seleccionado.goal.target_value}kg
+            </Text>
+            <Text style={styles.itemFechas}>
+              {seleccionado.goal.start_date} → {seleccionado.goal.ended_at}
+            </Text>
+            <ObjetivoChart logs={seleccionado.logs} goal={seleccionado.goal} ancho={ANCHO_GRAFICO} />
+          </ScrollView>
         ) : (
           <ScrollView contentContainerStyle={{ padding: 22 }}>
             {historial.length === 0 && (
               <Text style={styles.sinHistorial}>Todavía no tenés objetivos completados o cancelados.</Text>
             )}
-            {historial.map(({ goal, logs }) => (
-              <View key={goal.id} style={styles.item}>
-                <Text style={styles.itemTitulo}>
-                  {goal.status === 'completado' ? '🏆 Completado' : '✕ Cancelado'} ·{' '}
-                  {goal.type === 'bajar' ? 'Bajar' : 'Subir'} de {goal.start_value}kg a {goal.target_value}kg
-                </Text>
-                <Text style={styles.itemFechas}>
-                  {goal.start_date} → {goal.ended_at}
-                </Text>
-                <ObjetivoChart logs={logs} goal={goal} ancho={ANCHO_GRAFICO} />
-              </View>
+            {historial.map((entrada) => (
+              <Pressable key={entrada.goal.id} style={styles.fila} onPress={() => setSeleccionado(entrada)}>
+                <View>
+                  <Text style={styles.filaTitulo}>
+                    {entrada.goal.status === 'completado' ? '🏆' : '✕'}{' '}
+                    {entrada.goal.type === 'bajar' ? 'Bajar' : 'Subir'} de {entrada.goal.start_value}kg a{' '}
+                    {entrada.goal.target_value}kg
+                  </Text>
+                  <Text style={styles.filaFechas}>
+                    {entrada.goal.start_date} → {entrada.goal.ended_at}
+                  </Text>
+                </View>
+                <Text style={styles.flecha}>›</Text>
+              </Pressable>
             ))}
           </ScrollView>
         )}
@@ -76,9 +99,21 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   titulo: { fontFamily: 'SpaceGrotesk_700Bold', fontSize: 22, color: colors.textPrimary },
+  volver: { fontFamily: 'Inter_600SemiBold', fontSize: 16, color: colors.cobalto },
   cerrar: { fontFamily: 'Inter_600SemiBold', fontSize: 20, color: colors.textPrimary },
   sinHistorial: { fontFamily: 'Inter_400Regular', color: colors.textSecondary },
-  item: { marginBottom: 24 },
+  fila: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.surface,
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 8,
+  },
+  filaTitulo: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: colors.textPrimary, marginBottom: 4 },
+  filaFechas: { fontFamily: 'Inter_400Regular', fontSize: 12, color: colors.textTertiary },
+  flecha: { fontSize: 22, color: colors.textTertiary },
   itemTitulo: { fontFamily: 'Inter_600SemiBold', fontSize: 15, color: colors.textPrimary, marginBottom: 4 },
   itemFechas: { fontFamily: 'Inter_400Regular', fontSize: 12, color: colors.textTertiary, marginBottom: 8 },
 });
