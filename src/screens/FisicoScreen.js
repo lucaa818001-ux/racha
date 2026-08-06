@@ -17,6 +17,7 @@ import WeightChart from '../components/WeightChart';
 import RegistrarFisicoModal from '../components/RegistrarFisicoModal';
 import PhotoViewerModal from '../components/PhotoViewerModal';
 import ComparacionFotosModal from '../components/ComparacionFotosModal';
+import HistorialFisicoModal from '../components/HistorialFisicoModal';
 import FotosRecientes from '../components/FotosRecientes';
 import { calcularIMC } from '../lib/imc';
 import { colors } from '../theme/colors';
@@ -45,6 +46,7 @@ export default function FisicoScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [fotoSeleccionada, setFotoSeleccionada] = useState(null);
   const [comparacionVisible, setComparacionVisible] = useState(false);
+  const [historialVisible, setHistorialVisible] = useState(false);
   const [rango, setRango] = useState('todo');
 
   const cargarDatos = useCallback(async (uid) => {
@@ -130,7 +132,12 @@ export default function FisicoScreen() {
         <RefreshControl refreshing={refrescando} onRefresh={handleRefrescar} tintColor={colors.cobalto} />
       }
     >
-      <Text style={styles.titulo}>Físico</Text>
+      <View style={styles.encabezadoFila}>
+        <Text style={styles.titulo}>Físico</Text>
+        <Pressable style={styles.historialBoton} onPress={() => setHistorialVisible(true)}>
+          <Text style={styles.historialIcono}>📜</Text>
+        </Pressable>
+      </View>
 
       <FotosRecientes logs={fotosRecientes} onSeleccionar={setFotoSeleccionada} />
 
@@ -185,27 +192,6 @@ export default function FisicoScreen() {
         </Text>
       </Pressable>
 
-      <Text style={styles.subtitulo}>Historial</Text>
-      {logsRecientesPrimero.length === 0 && <Text style={styles.sinRegistros}>Todavía no registraste nada.</Text>}
-      {logsRecientesPrimero.map((log) => (
-        <Pressable
-          key={log.id}
-          style={styles.fila}
-          onPress={() => log.photo_path && setFotoSeleccionada(log.photo_path)}
-        >
-          <View>
-            <Text style={styles.filaFecha}>{log.date}</Text>
-            <Text style={styles.filaDetalle}>
-              {log.weight} kg · {log.height} cm · IMC {calcularIMC(log.weight, log.height)}
-              {log.photo_path ? ' · con foto' : ''}
-            </Text>
-          </View>
-          <Pressable onPress={() => handleBorrar(log)} hitSlop={12}>
-            <Text style={styles.borrarTexto}>Borrar</Text>
-          </Pressable>
-        </Pressable>
-      ))}
-
       <RegistrarFisicoModal
         visible={modalVisible}
         alturaInicial={ultimaAltura}
@@ -223,6 +209,13 @@ export default function FisicoScreen() {
         userId={userId}
         onClose={() => setComparacionVisible(false)}
       />
+      <HistorialFisicoModal
+        visible={historialVisible}
+        logs={logsRecientesPrimero}
+        onClose={() => setHistorialVisible(false)}
+        onSeleccionarFoto={setFotoSeleccionada}
+        onBorrar={handleBorrar}
+      />
     </ScrollView>
   );
 }
@@ -230,7 +223,15 @@ export default function FisicoScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
-  titulo: { fontSize: 28, fontFamily: 'SpaceGrotesk_700Bold', color: colors.textPrimary, marginBottom: 16 },
+  titulo: { fontSize: 28, fontFamily: 'SpaceGrotesk_700Bold', color: colors.textPrimary },
+  encabezadoFila: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  historialBoton: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+  historialIcono: { fontSize: 22 },
   pesoFila: { flexDirection: 'row', alignItems: 'baseline', marginBottom: 8 },
   pesoNumero: { fontSize: 44, fontFamily: 'SpaceGrotesk_700Bold', color: colors.textPrimary, marginRight: 8 },
   pesoUnidad: { fontSize: 18, fontFamily: 'Inter_400Regular', color: colors.textSecondary },
@@ -253,24 +254,4 @@ const styles = StyleSheet.create({
   },
   botonDeshabilitado: { opacity: 0.5 },
   botonSecundarioTexto: { fontFamily: 'Inter_500Medium', color: colors.textPrimary, fontSize: 14 },
-  subtitulo: {
-    fontFamily: 'SpaceGrotesk_600SemiBold',
-    fontSize: 18,
-    color: colors.textPrimary,
-    marginTop: 28,
-    marginBottom: 12,
-  },
-  sinRegistros: { fontFamily: 'Inter_400Regular', color: colors.textTertiary },
-  fila: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.surface,
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 8,
-  },
-  filaFecha: { fontFamily: 'Inter_600SemiBold', color: colors.textPrimary, fontSize: 14 },
-  filaDetalle: { fontFamily: 'Inter_400Regular', color: colors.textSecondary, fontSize: 13, marginTop: 2 },
-  borrarTexto: { fontFamily: 'Inter_500Medium', color: colors.racha.rojo, fontSize: 14 },
 });
