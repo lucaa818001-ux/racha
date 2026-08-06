@@ -28,10 +28,23 @@ function formatDate(d) {
   return `${year}-${month}-${day}`;
 }
 
-const MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+const MESES = [
+  'enero',
+  'febrero',
+  'marzo',
+  'abril',
+  'mayo',
+  'junio',
+  'julio',
+  'agosto',
+  'septiembre',
+  'octubre',
+  'noviembre',
+  'diciembre',
+];
 
-function formatDateCorto(d) {
-  return `${d.getDate()} ${MESES_CORTOS[d.getMonth()]}`;
+function formatDateLarga(d) {
+  return `${d.getDate()} de ${MESES[d.getMonth()]}`;
 }
 
 function mensajeMotivacional(progreso) {
@@ -184,12 +197,15 @@ export default function ObjetivoScreen() {
             const ritmo = calcularRitmoSemanal(goal.start_date, logs);
             if (!fechaEstimada || ritmo === null) return null;
             const emoji = ritmo < 0 ? '📉' : '📈';
+            const verbo = ritmo < 0 ? 'bajando' : 'subiendo';
             return (
               <View style={styles.ritmoCaja}>
                 <Text style={styles.ritmoTexto}>
-                  {emoji} ~{Math.abs(ritmo)}kg por semana
+                  {emoji} Estás {verbo} {Math.abs(ritmo)}kg por semana
                 </Text>
-                <Text style={styles.ritmoTexto}>🎯 Llegarías el {formatDateCorto(fechaEstimada)}</Text>
+                <Text style={styles.ritmoTexto}>
+                  Si seguís así, llegás a tu objetivo el {formatDateLarga(fechaEstimada)}
+                </Text>
               </View>
             );
           })()}
