@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   RefreshControl,
   Alert,
   Dimensions,
+  Animated,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
@@ -64,6 +65,8 @@ export default function ObjetivoScreen() {
   const [loading, setLoading] = useState(true);
   const [refrescando, setRefrescando] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const escalaCelebracion = useRef(new Animated.Value(1)).current;
+  const yaFesteje = useRef(null);
 
   const cargarDatos = useCallback(async (uid) => {
     const hoy = new Date();
@@ -127,6 +130,17 @@ export default function ObjetivoScreen() {
     ]);
   }
 
+  useEffect(() => {
+    if (!goal) return;
+    const pesoActual = logs.length > 0 ? logs[logs.length - 1].weight : goal.start_value;
+    const progreso = calcularProgreso(goal, pesoActual);
+    if (progreso >= 100 && yaFesteje.current !== goal.id) {
+      yaFesteje.current = goal.id;
+      escalaCelebracion.setValue(0.6);
+      Animated.spring(escalaCelebracion, { toValue: 1, friction: 3, useNativeDriver: true }).start();
+    }
+  }, [goal, logs]);
+
   if (loading) {
     return (
       <View style={styles.center}>
@@ -166,14 +180,15 @@ export default function ObjetivoScreen() {
             );
             return (
               <>
-                <View style={styles.progresoFila}>
-                  <Text style={styles.icono}>🎯</Text>
+                <Animated.View style={[styles.progresoFila, { transform: [{ scale: escalaCelebracion }] }]}>
+                  <Text style={styles.icono}>{progreso >= 100 ? '🏆' : '🎯'}</Text>
                   <Text style={styles.progresoNumero}>{progreso}%</Text>
-                </View>
+                </Animated.View>
                 <Text style={styles.progresoDetalle}>
                   {goal.type === 'bajar' ? 'Bajar' : 'Subir'} de {goal.start_value}kg a {goal.target_value}kg
                 </Text>
                 <Text style={styles.motivacional}>{mensajeMotivacional(progreso)}</Text>
+                {progreso >= 100 && <Text style={styles.confeti}>🎉 🎊 🥳 🎊 🎉</Text>}
                 <View style={styles.statsFila}>
                   <View style={styles.stat}>
                     <Text style={styles.statNumero}>{pesoActual}kg</Text>
@@ -235,7 +250,8 @@ const styles = StyleSheet.create({
   icono: { fontSize: 36, marginRight: 8 },
   progresoNumero: { fontSize: 48, fontFamily: 'SpaceGrotesk_700Bold', color: colors.textPrimary },
   progresoDetalle: { fontFamily: 'Inter_400Regular', color: colors.textSecondary, marginBottom: 4 },
-  motivacional: { fontFamily: 'Inter_600SemiBold', fontSize: 16, color: colors.cobalto, marginBottom: 16 },
+  motivacional: { fontFamily: 'Inter_600SemiBold', fontSize: 16, color: colors.cobalto, marginBottom: 8 },
+  confeti: { fontSize: 22, marginBottom: 16 },
   statsFila: { flexDirection: 'row', marginBottom: 8 },
   stat: { flex: 1, alignItems: 'center' },
   statNumero: { fontFamily: 'SpaceGrotesk_600SemiBold', fontSize: 18, color: colors.textPrimary },
