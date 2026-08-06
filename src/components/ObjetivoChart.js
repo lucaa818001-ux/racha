@@ -67,6 +67,13 @@ export default function ObjetivoChart({ logs, goal, ancho }) {
         ))}
         {mostrarFechaPorPunto ? (
           puntos.map((p, i) => (
+            <SvgText key={`peso-${i}`} x={p.x} y={p.y - 10} fontSize="10" fill={colors.textSecondary} textAnchor="middle">
+              {p.weight}
+            </SvgText>
+          ))
+        ) : null}
+        {mostrarFechaPorPunto ? (
+          puntos.map((p, i) => (
             <SvgText
               key={`fecha-${i}`}
               x={p.x}
