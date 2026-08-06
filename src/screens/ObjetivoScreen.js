@@ -28,6 +28,12 @@ function formatDate(d) {
   return `${year}-${month}-${day}`;
 }
 
+const MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
+function formatDateCorto(d) {
+  return `${d.getDate()} ${MESES_CORTOS[d.getMonth()]}`;
+}
+
 function mensajeMotivacional(progreso) {
   if (progreso >= 100) return '¡Lograste tu objetivo! 🎉';
   if (progreso >= 75) return '¡Ya casi llegás! 🔥';
@@ -177,12 +183,14 @@ export default function ObjetivoScreen() {
             const fechaEstimada = estimarFechaLogro(goal, logs);
             const ritmo = calcularRitmoSemanal(goal.start_date, logs);
             if (!fechaEstimada || ritmo === null) return null;
-            const verbo = ritmo < 0 ? 'bajando' : 'subiendo';
+            const emoji = ritmo < 0 ? '📉' : '📈';
             return (
-              <Text style={styles.fechaEstimada}>
-                Estás {verbo} ~{Math.abs(ritmo)}kg por semana. A este ritmo, llegarías el{' '}
-                {formatDate(fechaEstimada)}.
-              </Text>
+              <View style={styles.ritmoCaja}>
+                <Text style={styles.ritmoTexto}>
+                  {emoji} ~{Math.abs(ritmo)}kg por semana
+                </Text>
+                <Text style={styles.ritmoTexto}>🎯 Llegarías el {formatDateCorto(fechaEstimada)}</Text>
+              </View>
             );
           })()}
           <Pressable style={styles.botonCancelar} onPress={handleCancelar}>
@@ -216,7 +224,8 @@ const styles = StyleSheet.create({
   stat: { flex: 1, alignItems: 'center' },
   statNumero: { fontFamily: 'SpaceGrotesk_600SemiBold', fontSize: 18, color: colors.textPrimary },
   statLabel: { fontFamily: 'Inter_400Regular', fontSize: 11, color: colors.textTertiary, marginTop: 2 },
-  fechaEstimada: { fontFamily: 'Inter_600SemiBold', fontSize: 16, color: colors.cobalto, marginBottom: 16 },
+  ritmoCaja: { marginBottom: 16 },
+  ritmoTexto: { fontFamily: 'Inter_600SemiBold', fontSize: 17, color: colors.cobalto, marginBottom: 2 },
   botonCancelar: {
     marginTop: 8,
     borderRadius: 20,
