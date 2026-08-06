@@ -28,6 +28,14 @@ function formatDate(d) {
   return `${year}-${month}-${day}`;
 }
 
+function mensajeMotivacional(progreso) {
+  if (progreso >= 100) return '¡Lograste tu objetivo! 🎉';
+  if (progreso >= 75) return '¡Ya casi llegás! 🔥';
+  if (progreso >= 50) return 'Ya pasaste la mitad, seguí así 💪';
+  if (progreso >= 25) return 'Vas por buen camino';
+  return 'Arrancando fuerte';
+}
+
 export default function ObjetivoScreen() {
   const [userId, setUserId] = useState(null);
   const [goal, setGoal] = useState(null);
@@ -129,12 +137,41 @@ export default function ObjetivoScreen() {
         </>
       ) : (
         <>
-          <Text style={styles.progresoNumero}>
-            {calcularProgreso(goal, logs.length > 0 ? logs[logs.length - 1].weight : goal.start_value)}%
-          </Text>
-          <Text style={styles.progresoDetalle}>
-            {goal.type === 'bajar' ? 'Bajar' : 'Subir'} de {goal.start_value}kg a {goal.target_value}kg
-          </Text>
+          {(() => {
+            const pesoActual = logs.length > 0 ? logs[logs.length - 1].weight : goal.start_value;
+            const progreso = calcularProgreso(goal, pesoActual);
+            const restante = Math.round(Math.abs(goal.target_value - pesoActual) * 10) / 10;
+            const diasTranscurridos = Math.max(
+              0,
+              Math.round((new Date() - new Date(goal.start_date + 'T00:00:00')) / (1000 * 60 * 60 * 24))
+            );
+            return (
+              <>
+                <View style={styles.progresoFila}>
+                  <Text style={styles.icono}>🎯</Text>
+                  <Text style={styles.progresoNumero}>{progreso}%</Text>
+                </View>
+                <Text style={styles.progresoDetalle}>
+                  {goal.type === 'bajar' ? 'Bajar' : 'Subir'} de {goal.start_value}kg a {goal.target_value}kg
+                </Text>
+                <Text style={styles.motivacional}>{mensajeMotivacional(progreso)}</Text>
+                <View style={styles.statsFila}>
+                  <View style={styles.stat}>
+                    <Text style={styles.statNumero}>{pesoActual}</Text>
+                    <Text style={styles.statLabel}>⚖️ Peso actual</Text>
+                  </View>
+                  <View style={styles.stat}>
+                    <Text style={styles.statNumero}>{restante === 0 ? '¡Listo!' : restante}</Text>
+                    <Text style={styles.statLabel}>📍 Restantes</Text>
+                  </View>
+                  <View style={styles.stat}>
+                    <Text style={styles.statNumero}>{diasTranscurridos}</Text>
+                    <Text style={styles.statLabel}>📅 Días</Text>
+                  </View>
+                </View>
+              </>
+            );
+          })()}
           <ObjetivoChart logs={logs} goal={goal} ancho={ANCHO_GRAFICO} />
           {(() => {
             const fechaEstimada = estimarFechaLogro(goal, logs);
@@ -170,8 +207,15 @@ const styles = StyleSheet.create({
   sinObjetivo: { fontFamily: 'Inter_400Regular', color: colors.textSecondary },
   boton: { borderRadius: 20, paddingVertical: 16, alignItems: 'center', backgroundColor: colors.cobalto },
   botonTexto: { fontFamily: 'Inter_600SemiBold', color: '#fff', fontSize: 16 },
+  progresoFila: { flexDirection: 'row', alignItems: 'center' },
+  icono: { fontSize: 36, marginRight: 8 },
   progresoNumero: { fontSize: 48, fontFamily: 'SpaceGrotesk_700Bold', color: colors.textPrimary },
-  progresoDetalle: { fontFamily: 'Inter_400Regular', color: colors.textSecondary, marginBottom: 8 },
+  progresoDetalle: { fontFamily: 'Inter_400Regular', color: colors.textSecondary, marginBottom: 4 },
+  motivacional: { fontFamily: 'Inter_500Medium', color: colors.cobalto, marginBottom: 16 },
+  statsFila: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  stat: { alignItems: 'center' },
+  statNumero: { fontFamily: 'SpaceGrotesk_600SemiBold', fontSize: 18, color: colors.textPrimary },
+  statLabel: { fontFamily: 'Inter_400Regular', fontSize: 11, color: colors.textTertiary, marginTop: 2 },
   fechaEstimada: { fontFamily: 'Inter_400Regular', color: colors.textSecondary, marginBottom: 16 },
   botonCancelar: {
     marginTop: 8,
