@@ -14,7 +14,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
 import { getBodyLogsForRange } from '../lib/bodyLogs';
 import { getGoal, upsertGoal, deleteGoal } from '../lib/goals';
-import { calcularProgreso, estimarFechaLogro } from '../lib/objetivoCalculo';
+import { calcularProgreso, estimarFechaLogro, calcularRitmoSemanal } from '../lib/objetivoCalculo';
 import CrearObjetivoModal from '../components/CrearObjetivoModal';
 import ObjetivoChart from '../components/ObjetivoChart';
 import { colors } from '../theme/colors';
@@ -74,12 +74,12 @@ export default function ObjetivoScreen() {
     }
   }
 
-  async function handleCrear({ type, targetValue, targetDate }) {
+  async function handleCrear({ type, targetValue, targetDate, startValue }) {
     await upsertGoal(userId, {
       type,
       targetValue,
       targetDate,
-      startValue: pesoMasReciente,
+      startValue,
       startDate: new Date(),
     });
     await cargarDatos(userId);
@@ -138,16 +138,27 @@ export default function ObjetivoScreen() {
           <ObjetivoChart logs={logs} goal={goal} ancho={ANCHO_GRAFICO} />
           {(() => {
             const fechaEstimada = estimarFechaLogro(goal, logs);
-            return fechaEstimada ? (
-              <Text style={styles.fechaEstimada}>Al ritmo actual, llegarías el {formatDate(fechaEstimada)}</Text>
-            ) : null;
+            const ritmo = calcularRitmoSemanal(goal.start_date, logs);
+            if (!fechaEstimada || ritmo === null) return null;
+            const verbo = ritmo < 0 ? 'bajando' : 'subiendo';
+            return (
+              <Text style={styles.fechaEstimada}>
+                Estás {verbo} ~{Math.abs(ritmo)}kg por semana. A este ritmo, llegarías el{' '}
+                {formatDate(fechaEstimada)}.
+              </Text>
+            );
           })()}
           <Pressable style={styles.botonCancelar} onPress={handleCancelar}>
             <Text style={styles.botonCancelarTexto}>Cancelar objetivo</Text>
           </Pressable>
         </>
       )}
-      <CrearObjetivoModal visible={modalVisible} onGuardar={handleCrear} onClose={() => setModalVisible(false)} />
+      <CrearObjetivoModal
+        visible={modalVisible}
+        pesoInicial={pesoMasReciente}
+        onGuardar={handleCrear}
+        onClose={() => setModalVisible(false)}
+      />
     </ScrollView>
   );
 }

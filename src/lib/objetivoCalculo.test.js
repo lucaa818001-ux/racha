@@ -1,4 +1,4 @@
-import { calcularProgreso, estimarFechaLogro } from './objetivoCalculo';
+import { calcularProgreso, estimarFechaLogro, calcularRitmoSemanal } from './objetivoCalculo';
 
 test('bajar de peso: progreso a mitad de camino es 50', () => {
   const goal = { type: 'bajar', target_value: 70, start_value: 80 };
@@ -47,4 +47,18 @@ test('estimarFechaLogro: tendencia en contra devuelve null', () => {
     { date: '2026-01-15', weight: 84 },
   ];
   expect(estimarFechaLogro(goal, logs)).toBeNull();
+});
+
+test('calcularRitmoSemanal: con menos de 3 registros devuelve null', () => {
+  const logs = [{ date: '2026-01-01', weight: 80 }, { date: '2026-01-08', weight: 78 }];
+  expect(calcularRitmoSemanal('2026-01-01', logs)).toBeNull();
+});
+
+test('calcularRitmoSemanal: bajando 2kg cada 7 dias da -2', () => {
+  const logs = [
+    { date: '2026-01-01', weight: 80 },
+    { date: '2026-01-08', weight: 78 },
+    { date: '2026-01-15', weight: 76 },
+  ];
+  expect(calcularRitmoSemanal('2026-01-01', logs)).toBe(-2);
 });

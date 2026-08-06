@@ -13,10 +13,10 @@ export function calcularProgreso(goal, pesoActual) {
   return Math.max(0, Math.min(100, Math.round(progreso)));
 }
 
-export function estimarFechaLogro(goal, logsDesdeInicio) {
+function calcularRegresion(startDateStr, logsDesdeInicio) {
   if (logsDesdeInicio.length < 3) return null;
 
-  const startDate = new Date(goal.start_date + 'T00:00:00');
+  const startDate = new Date(startDateStr + 'T00:00:00');
   const puntos = logsDesdeInicio.map((log) => {
     const dias = Math.round((new Date(log.date + 'T00:00:00') - startDate) / (1000 * 60 * 60 * 24));
     return { x: dias, y: log.weight };
@@ -33,6 +33,13 @@ export function estimarFechaLogro(goal, logsDesdeInicio) {
 
   const pendiente = (n * sumXY - sumX * sumY) / denominador;
   const ordenada = (sumY - pendiente * sumX) / n;
+  return { pendiente, ordenada, startDate };
+}
+
+export function estimarFechaLogro(goal, logsDesdeInicio) {
+  const regresion = calcularRegresion(goal.start_date, logsDesdeInicio);
+  if (!regresion) return null;
+  const { pendiente, ordenada, startDate } = regresion;
 
   const direccionCorrecta = goal.type === 'bajar' ? pendiente < 0 : pendiente > 0;
   if (!direccionCorrecta) return null;
@@ -43,4 +50,10 @@ export function estimarFechaLogro(goal, logsDesdeInicio) {
   const fechaEstimada = new Date(startDate);
   fechaEstimada.setDate(fechaEstimada.getDate() + Math.round(diasHastaMeta));
   return fechaEstimada;
+}
+
+export function calcularRitmoSemanal(startDate, logsDesdeInicio) {
+  const regresion = calcularRegresion(startDate, logsDesdeInicio);
+  if (!regresion) return null;
+  return Math.round(regresion.pendiente * 7 * 10) / 10;
 }

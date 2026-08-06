@@ -1,21 +1,32 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Modal, View, Text, TextInput, Pressable, StyleSheet, Alert, Platform } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { colors } from '../theme/colors';
 
-export default function CrearObjetivoModal({ visible, onGuardar, onClose }) {
+export default function CrearObjetivoModal({ visible, pesoInicial, onGuardar, onClose }) {
   const [tipo, setTipo] = useState('bajar');
   const [valor, setValor] = useState('');
+  const [inicial, setInicial] = useState('');
   const [mostrarFecha, setMostrarFecha] = useState(false);
   const [fecha, setFecha] = useState(new Date());
   const [guardando, setGuardando] = useState(false);
 
+  useEffect(() => {
+    if (visible) setInicial(pesoInicial ? String(pesoInicial) : '');
+  }, [visible, pesoInicial]);
+
   const valorValido = valor.trim() !== '' && !Number.isNaN(Number(valor));
+  const inicialValido = inicial.trim() !== '' && !Number.isNaN(Number(inicial));
 
   async function handleGuardar() {
     setGuardando(true);
     try {
-      await onGuardar({ type: tipo, targetValue: Number(valor), targetDate: mostrarFecha ? fecha : null });
+      await onGuardar({
+        type: tipo,
+        targetValue: Number(valor),
+        targetDate: mostrarFecha ? fecha : null,
+        startValue: Number(inicial),
+      });
       setValor('');
       setMostrarFecha(false);
     } catch (e) {
@@ -47,6 +58,14 @@ export default function CrearObjetivoModal({ visible, onGuardar, onClose }) {
           </View>
           <TextInput
             style={styles.input}
+            placeholder="Peso inicial (kg)"
+            placeholderTextColor={colors.textTertiary}
+            keyboardType="decimal-pad"
+            value={inicial}
+            onChangeText={setInicial}
+          />
+          <TextInput
+            style={styles.input}
             placeholder="Peso objetivo (kg)"
             placeholderTextColor={colors.textTertiary}
             keyboardType="decimal-pad"
@@ -71,8 +90,11 @@ export default function CrearObjetivoModal({ visible, onGuardar, onClose }) {
             </View>
           )}
           <Pressable
-            style={[styles.guardarButton, (!valorValido || guardando) && styles.guardarButtonDeshabilitado]}
-            disabled={!valorValido || guardando}
+            style={[
+              styles.guardarButton,
+              (!valorValido || !inicialValido || guardando) && styles.guardarButtonDeshabilitado,
+            ]}
+            disabled={!valorValido || !inicialValido || guardando}
             onPress={handleGuardar}
           >
             <Text style={styles.guardarButtonTexto}>{guardando ? 'Guardando...' : 'Guardar'}</Text>
