@@ -157,11 +157,11 @@ export default function ObjetivoScreen() {
                 <Text style={styles.motivacional}>{mensajeMotivacional(progreso)}</Text>
                 <View style={styles.statsFila}>
                   <View style={styles.stat}>
-                    <Text style={styles.statNumero}>{pesoActual}</Text>
+                    <Text style={styles.statNumero}>{pesoActual}kg</Text>
                     <Text style={styles.statLabel}>⚖️ Peso actual</Text>
                   </View>
                   <View style={styles.stat}>
-                    <Text style={styles.statNumero}>{restante === 0 ? '¡Listo!' : restante}</Text>
+                    <Text style={styles.statNumero}>{restante === 0 ? '¡Listo!' : `${restante}kg`}</Text>
                     <Text style={styles.statLabel}>📍 Restantes</Text>
                   </View>
                   <View style={styles.stat}>
@@ -211,12 +211,12 @@ const styles = StyleSheet.create({
   icono: { fontSize: 36, marginRight: 8 },
   progresoNumero: { fontSize: 48, fontFamily: 'SpaceGrotesk_700Bold', color: colors.textPrimary },
   progresoDetalle: { fontFamily: 'Inter_400Regular', color: colors.textSecondary, marginBottom: 4 },
-  motivacional: { fontFamily: 'Inter_500Medium', color: colors.cobalto, marginBottom: 16 },
-  statsFila: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  stat: { alignItems: 'center' },
+  motivacional: { fontFamily: 'Inter_600SemiBold', fontSize: 16, color: colors.cobalto, marginBottom: 16 },
+  statsFila: { flexDirection: 'row', marginBottom: 8 },
+  stat: { flex: 1, alignItems: 'center' },
   statNumero: { fontFamily: 'SpaceGrotesk_600SemiBold', fontSize: 18, color: colors.textPrimary },
   statLabel: { fontFamily: 'Inter_400Regular', fontSize: 11, color: colors.textTertiary, marginTop: 2 },
-  fechaEstimada: { fontFamily: 'Inter_400Regular', color: colors.textSecondary, marginBottom: 16 },
+  fechaEstimada: { fontFamily: 'Inter_600SemiBold', fontSize: 16, color: colors.cobalto, marginBottom: 16 },
   botonCancelar: {
     marginTop: 8,
     borderRadius: 20,
