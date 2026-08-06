@@ -37,6 +37,7 @@ export default function ObjetivoChart({ logs, goal, ancho }) {
   }));
   const puntosStr = puntos.map((p) => `${p.x},${p.y}`).join(' ');
   const yMeta = yParaPeso(goal.target_value);
+  const mostrarFechaPorPunto = logs.length <= 10;
 
   return (
     <View style={styles.tarjeta}>
@@ -64,18 +65,35 @@ export default function ObjetivoChart({ logs, goal, ancho }) {
         {puntos.map((p, i) => (
           <Circle key={i} cx={p.x} cy={p.y} r={4} fill={colors.cobalto} />
         ))}
-        <SvgText x={MARGEN_LATERAL} y={ALTO_TOTAL - 6} fontSize="11" fill={colors.textTertiary} textAnchor="start">
-          {puntos[0].date}
-        </SvgText>
-        <SvgText
-          x={ancho - MARGEN_LATERAL}
-          y={ALTO_TOTAL - 6}
-          fontSize="11"
-          fill={colors.textTertiary}
-          textAnchor="end"
-        >
-          {puntos[puntos.length - 1].date}
-        </SvgText>
+        {mostrarFechaPorPunto ? (
+          puntos.map((p, i) => (
+            <SvgText
+              key={`fecha-${i}`}
+              x={p.x}
+              y={ALTO_TOTAL - 6}
+              fontSize="10"
+              fill={colors.textTertiary}
+              textAnchor="middle"
+            >
+              {p.date.slice(5)}
+            </SvgText>
+          ))
+        ) : (
+          <>
+            <SvgText x={MARGEN_LATERAL} y={ALTO_TOTAL - 6} fontSize="11" fill={colors.textTertiary} textAnchor="start">
+              {puntos[0].date}
+            </SvgText>
+            <SvgText
+              x={ancho - MARGEN_LATERAL}
+              y={ALTO_TOTAL - 6}
+              fontSize="11"
+              fill={colors.textTertiary}
+              textAnchor="end"
+            >
+              {puntos[puntos.length - 1].date}
+            </SvgText>
+          </>
+        )}
       </Svg>
     </View>
   );
