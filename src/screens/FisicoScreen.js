@@ -213,7 +213,6 @@ export default function FisicoScreen() {
         visible={historialVisible}
         logs={logsRecientesPrimero}
         onClose={() => setHistorialVisible(false)}
-        onSeleccionarFoto={setFotoSeleccionada}
         onBorrar={handleBorrar}
       />
     </ScrollView>

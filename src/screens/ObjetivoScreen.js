@@ -213,6 +213,11 @@ export default function ObjetivoScreen() {
                 <Text style={styles.progresoDetalle}>
                   {goal.type === 'bajar' ? 'Bajar' : 'Subir'} de {goal.start_value}kg a {goal.target_value}kg
                 </Text>
+                {goal.target_date && (
+                  <Text style={styles.fechaObjetivo}>
+                    🗓 Fecha objetivo: {formatDateLarga(new Date(goal.target_date + 'T00:00:00'))}
+                  </Text>
+                )}
                 <Text style={styles.motivacional}>{mensajeMotivacional(progreso)}</Text>
                 {progreso >= 100 && <Text style={styles.confeti}>🎉 🎊 🥳 🎊 🎉</Text>}
                 <View style={styles.statsFila}>
@@ -289,6 +294,7 @@ const styles = StyleSheet.create({
   icono: { fontSize: 36, marginRight: 8 },
   progresoNumero: { fontSize: 48, fontFamily: 'SpaceGrotesk_700Bold', color: colors.textPrimary },
   progresoDetalle: { fontFamily: 'Inter_400Regular', color: colors.textSecondary, marginBottom: 4 },
+  fechaObjetivo: { fontFamily: 'Inter_400Regular', fontSize: 13, color: colors.textTertiary, marginBottom: 4 },
   motivacional: { fontFamily: 'Inter_600SemiBold', fontSize: 16, color: colors.cobalto, marginBottom: 8 },
   confeti: { fontSize: 22, marginBottom: 16 },
   statsFila: { flexDirection: 'row', marginBottom: 8 },
