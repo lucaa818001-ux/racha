@@ -7,6 +7,25 @@ import { colors } from '../theme/colors';
 
 const ANCHO_GRAFICO = Dimensions.get('window').width - 44 - 32;
 
+const MESES = [
+  'enero',
+  'febrero',
+  'marzo',
+  'abril',
+  'mayo',
+  'junio',
+  'julio',
+  'agosto',
+  'septiembre',
+  'octubre',
+  'noviembre',
+  'diciembre',
+];
+
+function formatDateLarga(d) {
+  return `${d.getDate()} de ${MESES[d.getMonth()]}`;
+}
+
 export default function HistorialObjetivosModal({ visible, userId, onClose }) {
   const [historial, setHistorial] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -59,6 +78,48 @@ export default function HistorialObjetivosModal({ visible, userId, onClose }) {
             <Text style={styles.itemFechas}>
               {seleccionado.goal.start_date} → {seleccionado.goal.ended_at}
             </Text>
+            {seleccionado.goal.status === 'completado' &&
+              (() => {
+                const goal = seleccionado.goal;
+                const fechaReal = new Date(goal.ended_at + 'T00:00:00');
+                let textoDiferencia = '—';
+                if (goal.target_date) {
+                  const diffDias = Math.round(
+                    (new Date(goal.target_date + 'T00:00:00') - fechaReal) / (1000 * 60 * 60 * 24)
+                  );
+                  if (diffDias > 0) textoDiferencia = `${diffDias}d antes`;
+                  else if (diffDias < 0) textoDiferencia = `${Math.abs(diffDias)}d después`;
+                  else textoDiferencia = 'Justo a tiempo';
+                }
+                return (
+                  <View style={styles.statsCompletadoGrid}>
+                    <View style={styles.statsFila}>
+                      <View style={styles.stat}>
+                        <Text style={styles.statNumeroChico}>
+                          {formatDateLarga(new Date(goal.start_date + 'T00:00:00'))}
+                        </Text>
+                        <Text style={styles.statLabel}>🏁 Inicio</Text>
+                      </View>
+                      <View style={styles.stat}>
+                        <Text style={styles.statNumeroChico}>
+                          {goal.target_date ? formatDateLarga(new Date(goal.target_date + 'T00:00:00')) : 'Sin fecha'}
+                        </Text>
+                        <Text style={styles.statLabel}>🎯 Fecha puesta</Text>
+                      </View>
+                    </View>
+                    <View style={styles.statsFila}>
+                      <View style={styles.stat}>
+                        <Text style={styles.statNumeroChico}>{formatDateLarga(fechaReal)}</Text>
+                        <Text style={styles.statLabel}>✅ Fecha real</Text>
+                      </View>
+                      <View style={styles.stat}>
+                        <Text style={styles.statNumeroChico}>{textoDiferencia}</Text>
+                        <Text style={styles.statLabel}>⏱ Diferencia</Text>
+                      </View>
+                    </View>
+                  </View>
+                );
+              })()}
             <ObjetivoChart logs={seleccionado.logs} goal={seleccionado.goal} ancho={ANCHO_GRAFICO} />
           </ScrollView>
         ) : (
@@ -116,4 +177,19 @@ const styles = StyleSheet.create({
   flecha: { fontSize: 22, color: colors.textTertiary },
   itemTitulo: { fontFamily: 'Inter_600SemiBold', fontSize: 15, color: colors.textPrimary, marginBottom: 4 },
   itemFechas: { fontFamily: 'Inter_400Regular', fontSize: 12, color: colors.textTertiary, marginBottom: 8 },
+  statsCompletadoGrid: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    paddingVertical: 12,
+    marginBottom: 16,
+  },
+  statsFila: { flexDirection: 'row', marginBottom: 8 },
+  stat: { flex: 1, alignItems: 'center' },
+  statNumeroChico: {
+    fontFamily: 'SpaceGrotesk_600SemiBold',
+    fontSize: 14,
+    color: colors.textPrimary,
+    textAlign: 'center',
+  },
+  statLabel: { fontFamily: 'Inter_400Regular', fontSize: 11, color: colors.textTertiary, marginTop: 2 },
 });

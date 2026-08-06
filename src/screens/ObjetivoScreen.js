@@ -127,21 +127,10 @@ export default function ObjetivoScreen() {
   }
 
   function handleCompletar() {
-    const hoy = new Date();
-    const dias = Math.round((hoy - new Date(goal.start_date + 'T00:00:00')) / (1000 * 60 * 60 * 24));
-    const ritmo = calcularRitmoSemanal(goal.start_date, logs);
-    const fechaObjetivoTexto = goal.target_date
-      ? formatDateLarga(new Date(goal.target_date + 'T00:00:00'))
-      : 'sin fecha objetivo';
-    const resumen =
-      `Fecha objetivo que habías puesto: ${fechaObjetivoTexto}\n` +
-      `Fecha en la que llegaste: ${formatDateLarga(hoy)}\n` +
-      `Días que te tomó: ${dias}\n` +
-      `Promedio semanal: ${ritmo !== null ? `${Math.abs(ritmo)}kg/semana` : 'no calculado'}`;
-    Alert.alert('¡Objetivo completado! 🏆', resumen, [
-      { text: 'Ahora no', style: 'cancel' },
+    Alert.alert('Completar objetivo', '¿Confirmás que llegaste a tu objetivo?', [
+      { text: 'Todavía no', style: 'cancel' },
       {
-        text: 'Confirmar',
+        text: 'Sí, completar',
         onPress: async () => {
           await completeGoal(goal.id);
           await cargarDatos(userId);
@@ -158,7 +147,6 @@ export default function ObjetivoScreen() {
       yaFesteje.current = goal.id;
       escalaCelebracion.setValue(0.6);
       Animated.spring(escalaCelebracion, { toValue: 1, friction: 3, useNativeDriver: true }).start();
-      handleCompletar();
     }
   }, [goal, logs]);
 
@@ -197,13 +185,23 @@ export default function ObjetivoScreen() {
       ) : (
         <>
           {(() => {
+            const hoy = new Date();
             const pesoActual = logs.length > 0 ? logs[logs.length - 1].weight : goal.start_value;
             const progreso = calcularProgreso(goal, pesoActual);
             const restante = Math.round(Math.abs(goal.target_value - pesoActual) * 10) / 10;
             const diasTranscurridos = Math.max(
               0,
-              Math.round((new Date() - new Date(goal.start_date + 'T00:00:00')) / (1000 * 60 * 60 * 24))
+              Math.round((hoy - new Date(goal.start_date + 'T00:00:00')) / (1000 * 60 * 60 * 24))
             );
+            let textoDiferencia = '—';
+            if (goal.target_date) {
+              const diffDias = Math.round(
+                (new Date(goal.target_date + 'T00:00:00') - hoy) / (1000 * 60 * 60 * 24)
+              );
+              if (diffDias > 0) textoDiferencia = `${diffDias}d antes`;
+              else if (diffDias < 0) textoDiferencia = `${Math.abs(diffDias)}d después`;
+              else textoDiferencia = 'Justo a tiempo';
+            }
             return (
               <>
                 <Animated.View style={[styles.progresoFila, { transform: [{ scale: escalaCelebracion }] }]}>
@@ -234,6 +232,34 @@ export default function ObjetivoScreen() {
                     <Text style={styles.statLabel}>📅 Días</Text>
                   </View>
                 </View>
+                {progreso >= 100 && (
+                  <View style={styles.statsCompletadoGrid}>
+                    <View style={styles.statsFila}>
+                      <View style={styles.stat}>
+                        <Text style={styles.statNumeroChico}>
+                          {formatDateLarga(new Date(goal.start_date + 'T00:00:00'))}
+                        </Text>
+                        <Text style={styles.statLabel}>🏁 Inicio</Text>
+                      </View>
+                      <View style={styles.stat}>
+                        <Text style={styles.statNumeroChico}>
+                          {goal.target_date ? formatDateLarga(new Date(goal.target_date + 'T00:00:00')) : 'Sin fecha'}
+                        </Text>
+                        <Text style={styles.statLabel}>🎯 Fecha puesta</Text>
+                      </View>
+                    </View>
+                    <View style={styles.statsFila}>
+                      <View style={styles.stat}>
+                        <Text style={styles.statNumeroChico}>{formatDateLarga(hoy)}</Text>
+                        <Text style={styles.statLabel}>✅ Fecha real</Text>
+                      </View>
+                      <View style={styles.stat}>
+                        <Text style={styles.statNumeroChico}>{textoDiferencia}</Text>
+                        <Text style={styles.statLabel}>⏱ Diferencia</Text>
+                      </View>
+                    </View>
+                  </View>
+                )}
               </>
             );
           })()}
@@ -255,6 +281,11 @@ export default function ObjetivoScreen() {
               </View>
             );
           })()}
+          {calcularProgreso(goal, logs.length > 0 ? logs[logs.length - 1].weight : goal.start_value) >= 100 && (
+            <Pressable style={styles.botonCompletar} onPress={handleCompletar}>
+              <Text style={styles.botonCompletarTexto}>Completar objetivo</Text>
+            </Pressable>
+          )}
           <Pressable style={styles.botonCancelar} onPress={handleCancelar}>
             <Text style={styles.botonCancelarTexto}>Cancelar objetivo</Text>
           </Pressable>
@@ -301,6 +332,26 @@ const styles = StyleSheet.create({
   stat: { flex: 1, alignItems: 'center' },
   statNumero: { fontFamily: 'SpaceGrotesk_600SemiBold', fontSize: 18, color: colors.textPrimary },
   statLabel: { fontFamily: 'Inter_400Regular', fontSize: 11, color: colors.textTertiary, marginTop: 2 },
+  statsCompletadoGrid: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    paddingVertical: 12,
+    marginBottom: 16,
+  },
+  statNumeroChico: {
+    fontFamily: 'SpaceGrotesk_600SemiBold',
+    fontSize: 14,
+    color: colors.textPrimary,
+    textAlign: 'center',
+  },
+  botonCompletar: {
+    marginTop: 8,
+    borderRadius: 20,
+    paddingVertical: 14,
+    alignItems: 'center',
+    backgroundColor: colors.cobalto,
+  },
+  botonCompletarTexto: { fontFamily: 'Inter_600SemiBold', color: '#fff', fontSize: 15 },
   ritmoCaja: { backgroundColor: colors.surface, borderRadius: 20, padding: 16, marginBottom: 16 },
   ritmoTextoPrincipal: {
     fontFamily: 'SpaceGrotesk_600SemiBold',
