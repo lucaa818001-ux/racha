@@ -154,7 +154,7 @@ export default function FisicoScreen() {
         </View>
         <View style={styles.stat}>
           <Text style={styles.statNumero}>
-            {cambioPeso === null ? '--' : `${cambioPeso > 0 ? '+' : ''}${cambioPeso}`}
+            {cambioPeso === null ? '--' : `${cambioPeso > 0 ? '+' : ''}${cambioPeso}kg`}
           </Text>
           <Text style={styles.statLabel}>📈 Desde el inicio</Text>
         </View>
