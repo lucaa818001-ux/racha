@@ -196,14 +196,14 @@ export default function ObjetivoScreen() {
             const fechaEstimada = estimarFechaLogro(goal, logs);
             const ritmo = calcularRitmoSemanal(goal.start_date, logs);
             if (!fechaEstimada || ritmo === null) return null;
-            const emoji = ritmo < 0 ? '📉' : '📈';
+            const emoji = ritmo < 0 ? '⬇️' : '⬆️';
             const verbo = ritmo < 0 ? 'bajando' : 'subiendo';
             return (
               <View style={styles.ritmoCaja}>
-                <Text style={styles.ritmoTexto}>
-                  {emoji} Estás {verbo} {Math.abs(ritmo)}kg por semana
+                <Text style={styles.ritmoTextoPrincipal}>
+                  {emoji} {Math.abs(ritmo)}kg por semana
                 </Text>
-                <Text style={styles.ritmoTexto}>
+                <Text style={styles.ritmoTextoSecundario}>
                   Si seguís así, llegás a tu objetivo el {formatDateLarga(fechaEstimada)}
                 </Text>
               </View>
@@ -240,8 +240,14 @@ const styles = StyleSheet.create({
   stat: { flex: 1, alignItems: 'center' },
   statNumero: { fontFamily: 'SpaceGrotesk_600SemiBold', fontSize: 18, color: colors.textPrimary },
   statLabel: { fontFamily: 'Inter_400Regular', fontSize: 11, color: colors.textTertiary, marginTop: 2 },
-  ritmoCaja: { marginBottom: 16 },
-  ritmoTexto: { fontFamily: 'Inter_600SemiBold', fontSize: 17, color: colors.cobalto, marginBottom: 2 },
+  ritmoCaja: { backgroundColor: colors.surface, borderRadius: 20, padding: 16, marginBottom: 16 },
+  ritmoTextoPrincipal: {
+    fontFamily: 'SpaceGrotesk_600SemiBold',
+    fontSize: 20,
+    color: colors.cobalto,
+    marginBottom: 4,
+  },
+  ritmoTextoSecundario: { fontFamily: 'Inter_400Regular', fontSize: 13, color: colors.textSecondary },
   botonCancelar: {
     marginTop: 8,
     borderRadius: 20,
