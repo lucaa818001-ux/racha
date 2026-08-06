@@ -14,10 +14,11 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
 import { getBodyLogsForRange } from '../lib/bodyLogs';
-import { getGoal, upsertGoal, deleteGoal } from '../lib/goals';
+import { getActiveGoal, createGoal, cancelGoal, completeGoal } from '../lib/goals';
 import { calcularProgreso, estimarFechaLogro, calcularRitmoSemanal } from '../lib/objetivoCalculo';
 import CrearObjetivoModal from '../components/CrearObjetivoModal';
 import ObjetivoChart from '../components/ObjetivoChart';
+import HistorialObjetivosModal from '../components/HistorialObjetivosModal';
 import { colors } from '../theme/colors';
 
 const ANCHO_GRAFICO = Dimensions.get('window').width - 44 - 32;
@@ -65,6 +66,7 @@ export default function ObjetivoScreen() {
   const [loading, setLoading] = useState(true);
   const [refrescando, setRefrescando] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [historialVisible, setHistorialVisible] = useState(false);
   const escalaCelebracion = useRef(new Animated.Value(1)).current;
   const yaFesteje = useRef(null);
 
@@ -75,7 +77,7 @@ export default function ObjetivoScreen() {
     setTienePeso(historialCompleto.length > 0);
     setPesoMasReciente(historialCompleto.length > 0 ? historialCompleto[historialCompleto.length - 1].weight : null);
 
-    const objetivoActual = await getGoal(uid);
+    const objetivoActual = await getActiveGoal(uid);
     setGoal(objetivoActual);
     setLogs(objetivoActual ? historialCompleto.filter((l) => l.date >= objetivoActual.start_date) : []);
   }, []);
@@ -105,13 +107,7 @@ export default function ObjetivoScreen() {
   }
 
   async function handleCrear({ type, targetValue, targetDate, startValue }) {
-    await upsertGoal(userId, {
-      type,
-      targetValue,
-      targetDate,
-      startValue,
-      startDate: new Date(),
-    });
+    await createGoal(userId, { type, targetValue, targetDate, startValue, startDate: new Date() });
     await cargarDatos(userId);
     setModalVisible(false);
   }
@@ -123,7 +119,30 @@ export default function ObjetivoScreen() {
         text: 'Sí, cancelar',
         style: 'destructive',
         onPress: async () => {
-          await deleteGoal(userId);
+          await cancelGoal(goal.id);
+          await cargarDatos(userId);
+        },
+      },
+    ]);
+  }
+
+  function handleCompletar() {
+    const hoy = new Date();
+    const dias = Math.round((hoy - new Date(goal.start_date + 'T00:00:00')) / (1000 * 60 * 60 * 24));
+    const ritmo = calcularRitmoSemanal(goal.start_date, logs);
+    const fechaObjetivoTexto = goal.target_date
+      ? formatDateLarga(new Date(goal.target_date + 'T00:00:00'))
+      : 'sin fecha objetivo';
+    const resumen =
+      `Fecha objetivo que habías puesto: ${fechaObjetivoTexto}\n` +
+      `Fecha en la que llegaste: ${formatDateLarga(hoy)}\n` +
+      `Días que te tomó: ${dias}\n` +
+      `Promedio semanal: ${ritmo !== null ? `${Math.abs(ritmo)}kg/semana` : 'no calculado'}`;
+    Alert.alert('¡Objetivo completado! 🏆', resumen, [
+      {
+        text: 'Genial',
+        onPress: async () => {
+          await completeGoal(goal.id);
           await cargarDatos(userId);
         },
       },
@@ -157,7 +176,12 @@ export default function ObjetivoScreen() {
         <RefreshControl refreshing={refrescando} onRefresh={handleRefrescar} tintColor={colors.cobalto} />
       }
     >
-      <Text style={styles.titulo}>Objetivo</Text>
+      <View style={styles.encabezadoFila}>
+        <Text style={styles.titulo}>Objetivo</Text>
+        <Pressable onPress={() => setHistorialVisible(true)}>
+          <Text style={styles.historialBoton}>Historial</Text>
+        </Pressable>
+      </View>
       {!goal ? (
         <>
           {tienePeso ? (
@@ -189,6 +213,11 @@ export default function ObjetivoScreen() {
                 </Text>
                 <Text style={styles.motivacional}>{mensajeMotivacional(progreso)}</Text>
                 {progreso >= 100 && <Text style={styles.confeti}>🎉 🎊 🥳 🎊 🎉</Text>}
+                {progreso >= 100 && (
+                  <Pressable style={styles.botonCompletar} onPress={handleCompletar}>
+                    <Text style={styles.botonCompletarTexto}>Dar por completado</Text>
+                  </Pressable>
+                )}
                 <View style={styles.statsFila}>
                   <View style={styles.stat}>
                     <Text style={styles.statNumero}>{pesoActual}kg</Text>
@@ -235,6 +264,11 @@ export default function ObjetivoScreen() {
         onGuardar={handleCrear}
         onClose={() => setModalVisible(false)}
       />
+      <HistorialObjetivosModal
+        visible={historialVisible}
+        userId={userId}
+        onClose={() => setHistorialVisible(false)}
+      />
     </ScrollView>
   );
 }
@@ -242,7 +276,9 @@ export default function ObjetivoScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
-  titulo: { fontSize: 28, fontFamily: 'SpaceGrotesk_700Bold', color: colors.textPrimary, marginBottom: 16 },
+  titulo: { fontSize: 28, fontFamily: 'SpaceGrotesk_700Bold', color: colors.textPrimary },
+  encabezadoFila: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  historialBoton: { fontFamily: 'Inter_500Medium', color: colors.cobalto, fontSize: 14 },
   sinObjetivo: { fontFamily: 'Inter_400Regular', color: colors.textSecondary },
   boton: { borderRadius: 20, paddingVertical: 16, alignItems: 'center', backgroundColor: colors.cobalto },
   botonTexto: { fontFamily: 'Inter_600SemiBold', color: '#fff', fontSize: 16 },
@@ -252,6 +288,14 @@ const styles = StyleSheet.create({
   progresoDetalle: { fontFamily: 'Inter_400Regular', color: colors.textSecondary, marginBottom: 4 },
   motivacional: { fontFamily: 'Inter_600SemiBold', fontSize: 16, color: colors.cobalto, marginBottom: 8 },
   confeti: { fontSize: 22, marginBottom: 16 },
+  botonCompletar: {
+    borderRadius: 20,
+    paddingVertical: 14,
+    alignItems: 'center',
+    backgroundColor: colors.cobalto,
+    marginBottom: 16,
+  },
+  botonCompletarTexto: { fontFamily: 'Inter_600SemiBold', color: '#fff', fontSize: 15 },
   statsFila: { flexDirection: 'row', marginBottom: 8 },
   stat: { flex: 1, alignItems: 'center' },
   statNumero: { fontFamily: 'SpaceGrotesk_600SemiBold', fontSize: 18, color: colors.textPrimary },
