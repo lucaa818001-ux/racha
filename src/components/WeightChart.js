@@ -4,6 +4,7 @@ import { colors } from '../theme/colors';
 
 const ALTO_GRAFICO = 160;
 const MARGEN_ETIQUETA = 24;
+const MARGEN_LATERAL = 18;
 const ALTO_TOTAL = ALTO_GRAFICO + MARGEN_ETIQUETA * 2;
 
 export default function WeightChart({ logs, ancho }) {
@@ -22,8 +23,9 @@ export default function WeightChart({ logs, ancho }) {
   const pesoMin = min - margen;
   const pesoMax = max + margen;
 
+  const anchoUtil = ancho - MARGEN_LATERAL * 2;
   const puntos = logs.map((log, i) => {
-    const x = (i / (logs.length - 1)) * ancho;
+    const x = MARGEN_LATERAL + (i / (logs.length - 1)) * anchoUtil;
     const y = MARGEN_ETIQUETA + ALTO_GRAFICO - ((log.weight - pesoMin) / (pesoMax - pesoMin)) * ALTO_GRAFICO;
     return { x, y, weight: log.weight, date: log.date };
   });
@@ -51,10 +53,16 @@ export default function WeightChart({ logs, ancho }) {
               {p.weight}
             </SvgText>
           ))}
-        <SvgText x={0} y={ALTO_TOTAL - 6} fontSize="11" fill={colors.textTertiary} textAnchor="start">
+        <SvgText x={MARGEN_LATERAL} y={ALTO_TOTAL - 6} fontSize="11" fill={colors.textTertiary} textAnchor="start">
           {puntos[0].date}
         </SvgText>
-        <SvgText x={ancho} y={ALTO_TOTAL - 6} fontSize="11" fill={colors.textTertiary} textAnchor="end">
+        <SvgText
+          x={ancho - MARGEN_LATERAL}
+          y={ALTO_TOTAL - 6}
+          fontSize="11"
+          fill={colors.textTertiary}
+          textAnchor="end"
+        >
           {puntos[puntos.length - 1].date}
         </SvgText>
       </Svg>

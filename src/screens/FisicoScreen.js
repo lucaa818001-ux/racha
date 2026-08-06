@@ -17,6 +17,7 @@ import WeightChart from '../components/WeightChart';
 import RegistrarFisicoModal from '../components/RegistrarFisicoModal';
 import PhotoViewerModal from '../components/PhotoViewerModal';
 import ComparacionFotosModal from '../components/ComparacionFotosModal';
+import FotosRecientes from '../components/FotosRecientes';
 import { calcularIMC } from '../lib/imc';
 import { colors } from '../theme/colors';
 
@@ -109,6 +110,9 @@ export default function FisicoScreen() {
   const ultimaAltura = logs.length > 0 ? logs[logs.length - 1].height : null;
   const logsRecientesPrimero = [...logs].reverse();
   const fotosDisponibles = logs.filter((l) => l.photo_path).length;
+  const fotosRecientes = logsRecientesPrimero.filter((l) => l.photo_path).slice(0, 8);
+  const cambioPeso =
+    logs.length > 1 ? Math.round((pesoActual - logs[0].weight) * 10) / 10 : null;
   const rangoActual = RANGOS.find((r) => r.key === rango);
   let logsDelRango = logs;
   if (rangoActual.dias !== null) {
@@ -127,13 +131,35 @@ export default function FisicoScreen() {
       }
     >
       <Text style={styles.titulo}>Físico</Text>
+
+      <FotosRecientes logs={fotosRecientes} onSeleccionar={setFotoSeleccionada} />
+
       <View style={styles.pesoFila}>
         <Text style={styles.pesoNumero}>{pesoActual ?? '--'}</Text>
         <Text style={styles.pesoUnidad}>kg</Text>
       </View>
-      {pesoActual !== null && (
-        <Text style={styles.imcTexto}>IMC: {calcularIMC(pesoActual, ultimaAltura)}</Text>
-      )}
+
+      <View style={styles.statsFila}>
+        <View style={styles.stat}>
+          <Text style={styles.statNumero}>{ultimaAltura ?? '--'}</Text>
+          <Text style={styles.statLabel}>📏 Altura</Text>
+        </View>
+        <View style={styles.stat}>
+          <Text style={styles.statNumero}>{pesoActual !== null ? calcularIMC(pesoActual, ultimaAltura) : '--'}</Text>
+          <Text style={styles.statLabel}>⚖️ IMC</Text>
+        </View>
+        <View style={styles.stat}>
+          <Text style={styles.statNumero}>{logs.length}</Text>
+          <Text style={styles.statLabel}>📋 Registros</Text>
+        </View>
+        <View style={styles.stat}>
+          <Text style={styles.statNumero}>
+            {cambioPeso === null ? '--' : `${cambioPeso > 0 ? '+' : ''}${cambioPeso}`}
+          </Text>
+          <Text style={styles.statLabel}>📈 Desde el inicio</Text>
+        </View>
+      </View>
+
       <View style={styles.rangoFila}>
         {RANGOS.map((opcion) => (
           <Pressable
@@ -208,7 +234,10 @@ const styles = StyleSheet.create({
   pesoFila: { flexDirection: 'row', alignItems: 'baseline', marginBottom: 8 },
   pesoNumero: { fontSize: 44, fontFamily: 'SpaceGrotesk_700Bold', color: colors.textPrimary, marginRight: 8 },
   pesoUnidad: { fontSize: 18, fontFamily: 'Inter_400Regular', color: colors.textSecondary },
-  imcTexto: { fontFamily: 'Inter_400Regular', color: colors.textSecondary, marginBottom: 4 },
+  statsFila: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20, marginBottom: 4 },
+  stat: { alignItems: 'center' },
+  statNumero: { fontFamily: 'SpaceGrotesk_600SemiBold', fontSize: 18, color: colors.textPrimary },
+  statLabel: { fontFamily: 'Inter_400Regular', fontSize: 11, color: colors.textTertiary, marginTop: 2 },
   rangoFila: { flexDirection: 'row', marginTop: 12, backgroundColor: colors.surface, borderRadius: 12, padding: 4 },
   rangoBoton: { flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: 'center' },
   rangoBotonActivo: { backgroundColor: colors.cobalto },
