@@ -48,9 +48,14 @@ export default function EjerciciosScreen() {
   }
 
   async function handleCrearCarpeta(nombre) {
-    await createFolder(userId, nombre);
-    await cargarDatos(userId);
-    setCrearCarpetaVisible(false);
+    try {
+      await createFolder(userId, nombre);
+      await cargarDatos(userId);
+      setCrearCarpetaVisible(false);
+    } catch (e) {
+      console.error('Error al crear carpeta:', e.message, e);
+      Alert.alert('Error', 'No se pudo crear la carpeta, intentá de nuevo.');
+    }
   }
 
   function handleBorrarCarpeta(folder) {
@@ -60,8 +65,13 @@ export default function EjerciciosScreen() {
         text: 'Borrar',
         style: 'destructive',
         onPress: async () => {
-          await deleteFolder(folder.id);
-          await cargarDatos(userId);
+          try {
+            await deleteFolder(folder.id);
+            await cargarDatos(userId);
+          } catch (e) {
+            console.error('Error al borrar carpeta:', e.message, e);
+            Alert.alert('Error', 'No se pudo borrar la carpeta, intentá de nuevo.');
+          }
         },
       },
     ]);
