@@ -9,12 +9,12 @@ Módulo pendiente del README (Módulo 2), construido después de Racha, Físico 
 3. Rutinas (extensión de carpetas): dentro de una carpeta, cada ejercicio puede tener opcionalmente un número de orden y un objetivo (series objetivo + reps objetivo, o series objetivo + duración objetivo si es tipo tiempo). Si no se completan, la carpeta funciona sin orden ni objetivo, como una carpeta simple.
 4. Registrar sesión: elegir cantidad de series, cargar peso×reps (o duración si es tipo tiempo) por serie, fecha automática (hoy). Si el ejercicio tiene objetivo definido en la carpeta desde la que se abrió, la cantidad de series y los valores de reps/duración vienen pre-completados (editables).
 5. Ver historial de sesiones de un ejercicio + gráfica de evolución.
-6. Imagen del ejercicio: la foto propia si se subió, si no, una ilustración genérica según el grupo muscular.
+6. Imagen del ejercicio: la foto propia si se subió (opcional, la elige el usuario); si no subió nada, un emoji de referencia según el grupo muscular (sin fotos ni ilustraciones provistas por la app).
 
 ## Fuera de alcance
 - Detección automática de récord personal.
 - Cronómetro de descanso activo (el descanso es solo un dato de referencia, no una cuenta regresiva).
-- Generación de imagen por IA específica para cada ejercicio individual (se usa una ilustración genérica por grupo muscular, ver sección "Imagen del ejercicio").
+- Ilustraciones o fotos generadas/provistas por nosotros para los ejercicios (ni por IA ni bajadas de internet). Si el usuario no sube su propia foto, no se muestra ninguna imagen — solo un emoji de referencia según el grupo muscular (ver "Imagen del ejercicio").
 - Modo "entrenar ahora" (asistente que recorre los ejercicios de una rutina en secuencia dentro de una sola pantalla).
 
 ## Datos
@@ -112,10 +112,9 @@ create policy "Users manage their own folder items"
 - Bucket nuevo `exercise_photos` (mismo patrón que `body_photos`): fotos propias subidas al crear un ejercicio, acceso vía URL firmada.
 
 ## Imagen del ejercicio
-- Se generan 10 ilustraciones (una por `muscle_group`) con un modelo de generación de imágenes, mostrando una persona genérica haciendo un ejercicio representativo de esa zona con el músculo resaltado en color cobalto (`#4C6EF5`) sobre fondo oscuro (`#0D0D12`), estilo flat/vectorial consistente. Se generan una sola vez durante la implementación y quedan como assets bundleados en la app (sin costo ni dependencia externa en tiempo de uso).
-- Al crear un ejercicio, el usuario puede opcionalmente subir su propia foto (cámara o galería) — reemplaza la ilustración genérica para ese ejercicio puntual. Es responsabilidad del usuario elegir una imagen para su propio uso personal.
-- Prioridad de visualización: `exercise.photo_path` si existe, si no, la ilustración de `exercise.muscle_group`.
-- Referencia para ampliar el catálogo más adelante (fuera de esta implementación): un prompt de texto para generar ilustraciones adicionales por ejercicio específico vía Claude Design, ya compartido con el usuario en la conversación de diseño.
+- No generamos ni proveemos ninguna foto o ilustración de los ejercicios. Al crear un ejercicio, el usuario puede opcionalmente subir su propia foto (cámara o galería) — es responsabilidad suya elegir una imagen para su propio uso personal.
+- Si no subió foto, se muestra un emoji de referencia según `exercise.muscle_group` (mapeo fijo en código, sin assets nuevos): `pecho: 🎽`, `espalda: 🧍`, `cuadriceps: 🦵`, `isquios_gluteos: 🍑`, `hombros: 🤷`, `biceps: 💪`, `triceps: 🦾`, `core: 🔥`, `cardio: ❤️`, `otro: 🏋️`.
+- Prioridad de visualización: `exercise.photo_path` si existe, si no, el emoji de `exercise.muscle_group`.
 
 ## Cálculo de "mejor marca" por sesión
 Nuevo archivo `src/lib/exerciciosCalculo.js`, funciones puras y testeables:
@@ -132,8 +131,7 @@ Nuevo archivo `src/lib/exerciciosCalculo.js`, funciones puras y testeables:
 - Crear `src/components/EditarObjetivoCarpetaModal.js`: input numérico de orden, input de series objetivo, e input de reps objetivo o duración objetivo según `exercise.type`. Guarda vía `updateFolderItem`.
 - Crear `src/components/RegistrarSesionModal.js`: recibe `objetivo` opcional (`{sets, reps, durationSeg}`). Si viene, pre-completa el selector de cantidad de series con `objetivo.sets` y cada fila con `objetivo.reps` o `objetivo.durationSeg` (editable). Si no viene, arranca vacío como hoy. Selector de cantidad de series (1-8), filas de peso+reps (o duración), fecha automática, guarda vía `createExerciseLog`.
 - Crear `src/components/EjercicioChart.js`: gráfica hand-rolled SVG (mismo patrón que `WeightChart`/`ObjetivoChart`) con un punto por sesión usando `mejorMarcaSesion`.
-- Crear `src/components/DiagramaMusculo.js`: muestra la foto propia si existe, si no, la ilustración bundleada según `muscle_group`.
-- Assets nuevos: `assets/musculos/{pecho,espalda,cuadriceps,isquios_gluteos,hombros,biceps,triceps,core,cardio,otro}.png` (las 10 ilustraciones generadas).
+- Crear `src/components/DiagramaMusculo.js`: muestra la foto propia si existe (con `getSignedUrl`), si no, el emoji de `muscle_group` (mapeo fijo, sin assets nuevos).
 
 ## Manejo de errores
 - Si falla crear/guardar/borrar cualquier entidad: alerta simple, sin dejar estado a medias (mismo patrón que Objetivo/Físico).
