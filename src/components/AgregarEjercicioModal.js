@@ -32,10 +32,17 @@ export default function AgregarEjercicioModal({ visible, userId, onAgregar, onCl
     setFuente('mios');
     setItemCatalogo(null);
     setCargando(true);
-    getExercises(userId, null).then((data) => {
-      setMisEjercicios(data);
-      setCargando(false);
-    });
+    (async () => {
+      try {
+        const data = await getExercises(userId, null);
+        setMisEjercicios(data);
+      } catch (e) {
+        console.error('Error al cargar ejercicios:', e.message, e);
+        Alert.alert('Error', 'No se pudieron cargar tus ejercicios, intentá de nuevo.');
+      } finally {
+        setCargando(false);
+      }
+    })();
   }, [visible, userId]);
 
   function elegirDeCatalogo(item) {
