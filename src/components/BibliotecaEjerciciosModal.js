@@ -11,14 +11,7 @@ import {
   Alert,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import {
-  getExercises,
-  createExercise,
-  deleteExercise,
-  updateFolderItem,
-  getExerciseLogs,
-  createExerciseLog,
-} from '../lib/exercises';
+import { getExercises, createExercise, deleteExercise, updateFolderItem, getExerciseLogs } from '../lib/exercises';
 import DiagramaMusculo from './DiagramaMusculo';
 import EjercicioChart from './EjercicioChart';
 import { CATALOGO_EJERCICIOS } from '../lib/catalogoEjercicios';
@@ -37,13 +30,7 @@ const GRUPOS_MUSCULARES = [
   { key: 'otro', label: 'Otro' },
 ];
 
-function filasVacias(cantidad, tipo) {
-  return Array.from({ length: cantidad }, () =>
-    tipo === 'tiempo' ? { duration_seg: '' } : { weight: '', reps: '' }
-  );
-}
-
-export default function ListaEjerciciosModal({ visible, userId, folderId, folderName, folders, ancho, onClose, onCambio }) {
+export default function BibliotecaEjerciciosModal({ visible, userId, folderId, folderName, folders, ancho, onClose, onCambio }) {
   const [vista, setVista] = useState('lista');
   const [cargando, setCargando] = useState(true);
   const [ejercicios, setEjercicios] = useState([]);
@@ -63,10 +50,6 @@ export default function ListaEjerciciosModal({ visible, userId, folderId, folder
   const [targetReps, setTargetReps] = useState('');
   const [targetDurationSeg, setTargetDurationSeg] = useState('');
   const [guardandoObjetivo, setGuardandoObjetivo] = useState(false);
-
-  const [cantidadSeries, setCantidadSeries] = useState(1);
-  const [sets, setSets] = useState(filasVacias(1, 'peso_reps'));
-  const [guardandoSesion, setGuardandoSesion] = useState(false);
 
   const cargarEjercicios = useCallback(async () => {
     setCargando(true);
@@ -116,19 +99,6 @@ export default function ListaEjerciciosModal({ visible, userId, folderId, folder
     setVista('crear');
   }
 
-  function abrirRegistrarSesion() {
-    const cantidad = seleccionado.target_sets || 1;
-    setCantidadSeries(cantidad);
-    const filas = filasVacias(cantidad, seleccionado.type);
-    if (seleccionado.type === 'tiempo' && seleccionado.target_duration_seg) {
-      filas.forEach((f) => (f.duration_seg = String(seleccionado.target_duration_seg)));
-    } else if (seleccionado.type === 'peso_reps' && seleccionado.target_reps) {
-      filas.forEach((f) => (f.reps = String(seleccionado.target_reps)));
-    }
-    setSets(filas);
-    setVista('registrarSesion');
-  }
-
   function abrirCatalogo() {
     setVista('catalogo');
   }
@@ -141,31 +111,12 @@ export default function ListaEjerciciosModal({ visible, userId, folderId, folder
   }
 
   function volver() {
-    if (vista === 'registrarSesion') setVista('detalle');
-    else if (vista === 'catalogo') setVista('crear');
+    if (vista === 'catalogo') setVista('crear');
     else setVista('lista');
-  }
-
-  function repetirEnTodas() {
-    const base = sets[0];
-    setSets((actual) => actual.map(() => ({ ...base })));
   }
 
   function toggleFolderSeleccionada(id) {
     setFolderIdsSeleccionadas((actual) => (actual.includes(id) ? actual.filter((f) => f !== id) : [...actual, id]));
-  }
-
-  function cambiarCantidadSeries(n) {
-    setCantidadSeries(n);
-    setSets((actual) => {
-      const nuevas = filasVacias(n, seleccionado.type);
-      for (let i = 0; i < Math.min(n, actual.length); i++) nuevas[i] = actual[i];
-      return nuevas;
-    });
-  }
-
-  function actualizarSet(indice, cambios) {
-    setSets((actual) => actual.map((s, i) => (i === indice ? { ...s, ...cambios } : s)));
   }
 
   async function elegirFoto(origen) {
@@ -233,25 +184,6 @@ export default function ListaEjerciciosModal({ visible, userId, folderId, folder
     }
   }
 
-  async function handleGuardarSesion() {
-    setGuardandoSesion(true);
-    try {
-      const setsFormateados =
-        seleccionado.type === 'tiempo'
-          ? sets.map((s) => ({ duration_seg: Number(s.duration_seg) || 0 }))
-          : sets.map((s) => ({ weight: Number(s.weight) || 0, reps: Number(s.reps) || 0 }));
-      await createExerciseLog(seleccionado.id, userId, { date: new Date(), sets: setsFormateados });
-      const data = await getExerciseLogs(seleccionado.id);
-      setLogs(data);
-      setVista('detalle');
-    } catch (e) {
-      console.error('Error al registrar sesión:', e.message, e);
-      Alert.alert('Error', 'No se pudo guardar la sesión, intentá de nuevo.');
-    } finally {
-      setGuardandoSesion(false);
-    }
-  }
-
   function handleBorrarEjercicio() {
     const mensaje =
       logs.length > 0
@@ -280,9 +212,7 @@ export default function ListaEjerciciosModal({ visible, userId, folderId, folder
             <Text style={styles.titulo}>{folderName}</Text>
           ) : (
             <Pressable onPress={volver} hitSlop={12}>
-              <Text style={styles.volver}>
-                ‹ {vista === 'registrarSesion' ? seleccionado.name : vista === 'catalogo' ? 'Crear ejercicio' : folderName}
-              </Text>
+              <Text style={styles.volver}>‹ {vista === 'catalogo' ? 'Crear ejercicio' : folderName}</Text>
             </Pressable>
           )}
           <View style={styles.encabezadoBotones}>
@@ -345,9 +275,6 @@ export default function ListaEjerciciosModal({ visible, userId, folderId, folder
               <Text style={styles.descansoTexto}>⏱ Descanso de referencia: {seleccionado.rest_seconds}s</Text>
             ) : null}
             <EjercicioChart logs={logs} type={seleccionado.type} ancho={ancho} />
-            <Pressable style={styles.boton} onPress={abrirRegistrarSesion}>
-              <Text style={styles.botonTexto}>Registrar sesión</Text>
-            </Pressable>
             <Text style={styles.subtitulo}>Historial</Text>
             {logs.length === 0 && <Text style={styles.sinEjercicios}>Todavía no registraste ninguna sesión.</Text>}
             {[...logs].reverse().map((log) => (
@@ -419,7 +346,7 @@ export default function ListaEjerciciosModal({ visible, userId, folderId, folder
             </Pressable>
             {folders.length > 0 && (
               <>
-                <Text style={styles.etiqueta}>Carpetas</Text>
+                <Text style={styles.etiqueta}>Rutinas</Text>
                 <View style={styles.gridChips}>
                   {folders.map((folder) => (
                     <Pressable
@@ -456,11 +383,7 @@ export default function ListaEjerciciosModal({ visible, userId, folderId, folder
                 <View key={grupo.key} style={{ marginBottom: 16 }}>
                   <Text style={styles.subtituloCatalogo}>{grupo.label}</Text>
                   {items.map((item) => (
-                    <Pressable
-                      key={item.name}
-                      style={styles.filaCatalogo}
-                      onPress={() => elegirDeCatalogo(item)}
-                    >
+                    <Pressable key={item.name} style={styles.filaCatalogo} onPress={() => elegirDeCatalogo(item)}>
                       <Text style={styles.filaCatalogoTexto}>{item.name}</Text>
                       <Text style={styles.flecha}>›</Text>
                     </Pressable>
@@ -473,7 +396,7 @@ export default function ListaEjerciciosModal({ visible, userId, folderId, folder
 
         {vista === 'editarObjetivo' && seleccionado && (
           <ScrollView contentContainerStyle={{ padding: 22 }}>
-            <Text style={styles.tituloDetalle}>Editar en esta carpeta</Text>
+            <Text style={styles.tituloDetalle}>Editar en esta rutina</Text>
             <TextInput
               style={styles.input}
               placeholder="Orden (ej: 1)"
@@ -515,71 +438,6 @@ export default function ListaEjerciciosModal({ visible, userId, folderId, folder
               onPress={handleGuardarObjetivo}
             >
               <Text style={styles.guardarButtonTexto}>{guardandoObjetivo ? 'Guardando...' : 'Guardar'}</Text>
-            </Pressable>
-          </ScrollView>
-        )}
-
-        {vista === 'registrarSesion' && seleccionado && (
-          <ScrollView contentContainerStyle={{ padding: 22 }}>
-            <Text style={styles.tituloDetalle}>Registrar sesión</Text>
-            <Text style={styles.etiqueta}>Cantidad de series</Text>
-            <View style={styles.gridChips}>
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
-                <Pressable
-                  key={n}
-                  style={[styles.chip, cantidadSeries === n && styles.chipActivo]}
-                  onPress={() => cambiarCantidadSeries(n)}
-                >
-                  <Text style={styles.chipTexto}>{n}</Text>
-                </Pressable>
-              ))}
-            </View>
-            {sets.map((set, i) =>
-              seleccionado.type === 'tiempo' ? (
-                <View key={i} style={styles.serieFila}>
-                  <Text style={styles.serieNumero}>Serie {i + 1}</Text>
-                  <TextInput
-                    style={styles.serieInput}
-                    placeholder="Segundos"
-                    placeholderTextColor={colors.textTertiary}
-                    keyboardType="number-pad"
-                    value={set.duration_seg}
-                    onChangeText={(valor) => actualizarSet(i, { duration_seg: valor })}
-                  />
-                </View>
-              ) : (
-                <View key={i} style={styles.serieFila}>
-                  <Text style={styles.serieNumero}>Serie {i + 1}</Text>
-                  <TextInput
-                    style={styles.serieInput}
-                    placeholder="Kg"
-                    placeholderTextColor={colors.textTertiary}
-                    keyboardType="decimal-pad"
-                    value={set.weight}
-                    onChangeText={(valor) => actualizarSet(i, { weight: valor })}
-                  />
-                  <TextInput
-                    style={styles.serieInput}
-                    placeholder="Reps"
-                    placeholderTextColor={colors.textTertiary}
-                    keyboardType="number-pad"
-                    value={set.reps}
-                    onChangeText={(valor) => actualizarSet(i, { reps: valor })}
-                  />
-                </View>
-              )
-            )}
-            {cantidadSeries > 1 && (
-              <Pressable style={styles.fotoButton} onPress={repetirEnTodas}>
-                <Text style={styles.fotoButtonTexto}>🔁 Repetir Serie 1 en todas</Text>
-              </Pressable>
-            )}
-            <Pressable
-              style={[styles.guardarButton, guardandoSesion && styles.guardarButtonDeshabilitado]}
-              disabled={guardandoSesion}
-              onPress={handleGuardarSesion}
-            >
-              <Text style={styles.guardarButtonTexto}>{guardandoSesion ? 'Guardando...' : 'Guardar sesión'}</Text>
             </Pressable>
           </ScrollView>
         )}
@@ -653,8 +511,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 8,
   },
-  boton: { borderRadius: 20, paddingVertical: 16, alignItems: 'center', backgroundColor: colors.cobalto },
-  botonTexto: { fontFamily: 'Inter_600SemiBold', color: '#fff', fontSize: 16 },
   subtitulo: {
     fontFamily: 'SpaceGrotesk_600SemiBold',
     fontSize: 18,
@@ -704,16 +560,4 @@ const styles = StyleSheet.create({
   guardarButton: { borderRadius: 20, paddingVertical: 14, alignItems: 'center', backgroundColor: colors.cobalto },
   guardarButtonDeshabilitado: { opacity: 0.5 },
   guardarButtonTexto: { fontFamily: 'Inter_600SemiBold', color: '#fff', fontSize: 16 },
-  serieFila: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
-  serieNumero: { fontFamily: 'Inter_500Medium', color: colors.textSecondary, fontSize: 13, width: 64 },
-  serieInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    padding: 10,
-    backgroundColor: colors.surface,
-    color: colors.textPrimary,
-    fontFamily: 'Inter_400Regular',
-  },
 });
