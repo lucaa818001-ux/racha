@@ -4,13 +4,6 @@ import { supabase } from './supabase';
 
 const BUCKET = 'exercise_photos';
 
-function formatDate(d) {
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
 export async function getFolders(userId) {
   const { data: folders, error } = await supabase
     .from('exercise_folders')
@@ -142,16 +135,6 @@ export async function getExerciseLogs(exerciseId) {
     .select('id, date, sets')
     .eq('exercise_id', exerciseId)
     .order('date', { ascending: true });
-  if (error) throw error;
-  return data;
-}
-
-export async function createExerciseLog(exerciseId, userId, { date, sets }) {
-  const { data, error } = await supabase
-    .from('exercise_logs')
-    .insert({ exercise_id: exerciseId, user_id: userId, date: formatDate(date), sets })
-    .select()
-    .single();
   if (error) throw error;
   return data;
 }
