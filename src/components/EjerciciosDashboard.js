@@ -19,7 +19,16 @@ export default function EjerciciosDashboard({ userId, folders, ancho, onEmpezar,
   const [recientes, setRecientes] = useState([]);
 
   useEffect(() => {
-    getRecentWorkouts(userId, 5).then(setRecientes);
+    async function cargarRecientes() {
+      try {
+        const data = await getRecentWorkouts(userId, 5);
+        setRecientes(data);
+      } catch (e) {
+        console.error('Error al cargar entrenamientos recientes:', e.message, e);
+        Alert.alert('Error', 'No se pudieron cargar los entrenamientos recientes.');
+      }
+    }
+    cargarRecientes();
   }, [userId]);
 
   async function handleCrearCarpeta(nombre) {
@@ -104,13 +113,14 @@ export default function EjerciciosDashboard({ userId, folders, ancho, onEmpezar,
       {recientes.length === 0 && <Text style={styles.sinDatos}>Todavía no completaste ningún entrenamiento.</Text>}
       {recientes.map((workout) => {
         const duracion = calcularDuracionMinutos(new Date(workout.started_at), new Date(workout.ended_at));
-        const entradasConTipo = workout.exercise_logs.map((log) => ({ type: log.exercises.type, sets: log.sets }));
+        const logs = workout.exercise_logs ?? [];
+        const entradasConTipo = logs.map((log) => ({ type: log.exercises.type, sets: log.sets }));
         const volumen = calcularVolumenTotal(entradasConTipo);
         return (
           <View key={workout.id} style={styles.tarjetaReciente}>
             <Text style={styles.recienteFecha}>{formatFecha(workout.started_at)}</Text>
             <Text style={styles.recienteDetalle}>
-              {duracion} min · {workout.exercise_logs.length} ejercicio{workout.exercise_logs.length === 1 ? '' : 's'}
+              {duracion} min · {logs.length} ejercicio{logs.length === 1 ? '' : 's'}
               {volumen > 0 ? ` · ${volumen}kg` : ''}
             </Text>
           </View>
