@@ -21,6 +21,7 @@ import {
 } from '../lib/exercises';
 import DiagramaMusculo from './DiagramaMusculo';
 import EjercicioChart from './EjercicioChart';
+import { CATALOGO_EJERCICIOS } from '../lib/catalogoEjercicios';
 import { colors } from '../theme/colors';
 
 const GRUPOS_MUSCULARES = [
@@ -128,8 +129,26 @@ export default function ListaEjerciciosModal({ visible, userId, folderId, folder
     setVista('registrarSesion');
   }
 
+  function abrirCatalogo() {
+    setVista('catalogo');
+  }
+
+  function elegirDeCatalogo(item) {
+    setNombre(item.name);
+    setMuscleGroup(item.muscleGroup);
+    setTipo(item.type);
+    setVista('crear');
+  }
+
   function volver() {
-    setVista(vista === 'registrarSesion' ? 'detalle' : 'lista');
+    if (vista === 'registrarSesion') setVista('detalle');
+    else if (vista === 'catalogo') setVista('crear');
+    else setVista('lista');
+  }
+
+  function repetirEnTodas() {
+    const base = sets[0];
+    setSets((actual) => actual.map(() => ({ ...base })));
   }
 
   function toggleFolderSeleccionada(id) {
@@ -261,7 +280,9 @@ export default function ListaEjerciciosModal({ visible, userId, folderId, folder
             <Text style={styles.titulo}>{folderName}</Text>
           ) : (
             <Pressable onPress={volver} hitSlop={12}>
-              <Text style={styles.volver}>‹ {vista === 'registrarSesion' ? seleccionado.name : folderName}</Text>
+              <Text style={styles.volver}>
+                ‹ {vista === 'registrarSesion' ? seleccionado.name : vista === 'catalogo' ? 'Crear ejercicio' : folderName}
+              </Text>
             </Pressable>
           )}
           <View style={styles.encabezadoBotones}>
@@ -281,7 +302,13 @@ export default function ListaEjerciciosModal({ visible, userId, folderId, folder
             <ActivityIndicator size="large" color={colors.cobalto} style={{ marginTop: 40 }} />
           ) : (
             <ScrollView contentContainerStyle={{ padding: 22 }}>
-              {ejercicios.length === 0 && <Text style={styles.sinEjercicios}>Todavía no hay ejercicios acá.</Text>}
+              {ejercicios.length === 0 && (
+                <View style={styles.vacioContenedor}>
+                  <Text style={styles.vacioEmoji}>🏋️‍♂️</Text>
+                  <Text style={styles.vacioTitulo}>Todavía no hay ejercicios acá</Text>
+                  <Text style={styles.vacioSubtitulo}>Creá el primero o elegí uno de la lista</Text>
+                </View>
+              )}
               {ejercicios.map((ejercicio) => (
                 <View key={ejercicio.id} style={styles.fila}>
                   <Pressable style={styles.filaContenido} onPress={() => abrirDetalle(ejercicio)}>
@@ -342,6 +369,9 @@ export default function ListaEjerciciosModal({ visible, userId, folderId, folder
         {vista === 'crear' && (
           <ScrollView contentContainerStyle={{ padding: 22 }}>
             <Text style={styles.tituloDetalle}>Crear ejercicio</Text>
+            <Pressable style={styles.fotoButton} onPress={abrirCatalogo}>
+              <Text style={styles.fotoButtonTexto}>📋 Elegir de la lista</Text>
+            </Pressable>
             <TextInput
               style={styles.input}
               placeholder="Nombre del ejercicio"
@@ -413,6 +443,31 @@ export default function ListaEjerciciosModal({ visible, userId, folderId, folder
             >
               <Text style={styles.guardarButtonTexto}>{guardandoCrear ? 'Guardando...' : 'Guardar'}</Text>
             </Pressable>
+          </ScrollView>
+        )}
+
+        {vista === 'catalogo' && (
+          <ScrollView contentContainerStyle={{ padding: 22 }}>
+            <Text style={styles.tituloDetalle}>Elegir de la lista</Text>
+            {GRUPOS_MUSCULARES.map((grupo) => {
+              const items = CATALOGO_EJERCICIOS.filter((item) => item.muscleGroup === grupo.key);
+              if (items.length === 0) return null;
+              return (
+                <View key={grupo.key} style={{ marginBottom: 16 }}>
+                  <Text style={styles.subtituloCatalogo}>{grupo.label}</Text>
+                  {items.map((item) => (
+                    <Pressable
+                      key={item.name}
+                      style={styles.filaCatalogo}
+                      onPress={() => elegirDeCatalogo(item)}
+                    >
+                      <Text style={styles.filaCatalogoTexto}>{item.name}</Text>
+                      <Text style={styles.flecha}>›</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              );
+            })}
           </ScrollView>
         )}
 
@@ -514,6 +569,11 @@ export default function ListaEjerciciosModal({ visible, userId, folderId, folder
                 </View>
               )
             )}
+            {cantidadSeries > 1 && (
+              <Pressable style={styles.fotoButton} onPress={repetirEnTodas}>
+                <Text style={styles.fotoButtonTexto}>🔁 Repetir Serie 1 en todas</Text>
+              </Pressable>
+            )}
             <Pressable
               style={[styles.guardarButton, guardandoSesion && styles.guardarButtonDeshabilitado]}
               disabled={guardandoSesion}
@@ -550,6 +610,27 @@ const styles = StyleSheet.create({
   masBoton: { fontSize: 20 },
   cerrar: { fontFamily: 'Inter_600SemiBold', fontSize: 20, color: colors.textPrimary },
   sinEjercicios: { fontFamily: 'Inter_400Regular', color: colors.textTertiary },
+  vacioContenedor: { alignItems: 'center', paddingVertical: 40 },
+  vacioEmoji: { fontSize: 48, marginBottom: 12 },
+  vacioTitulo: { fontFamily: 'Inter_600SemiBold', fontSize: 15, color: colors.textPrimary, marginBottom: 4 },
+  vacioSubtitulo: { fontFamily: 'Inter_400Regular', fontSize: 13, color: colors.textTertiary },
+  subtituloCatalogo: {
+    fontFamily: 'SpaceGrotesk_600SemiBold',
+    fontSize: 15,
+    color: colors.cobalto,
+    marginBottom: 8,
+  },
+  filaCatalogo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 6,
+  },
+  filaCatalogoTexto: { fontFamily: 'Inter_400Regular', fontSize: 14, color: colors.textPrimary },
+  flecha: { fontSize: 20, color: colors.textTertiary },
   fila: {
     flexDirection: 'row',
     alignItems: 'center',
