@@ -4,6 +4,10 @@ import * as ImagePicker from 'expo-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { colors } from '../theme/colors';
 
+function aNumero(texto) {
+  return Number(String(texto).replace(',', '.'));
+}
+
 export default function RegistrarFisicoModal({ visible, alturaInicial, onGuardar, onClose }) {
   const [fecha, setFecha] = useState(new Date());
   const [peso, setPeso] = useState('');
@@ -15,8 +19,8 @@ export default function RegistrarFisicoModal({ visible, alturaInicial, onGuardar
   const [brazo, setBrazo] = useState('');
   const [pierna, setPierna] = useState('');
 
-  const pesoValido = peso.trim() !== '' && !Number.isNaN(Number(peso));
-  const alturaValida = altura.trim() !== '' && !Number.isNaN(Number(altura));
+  const pesoValido = peso.trim() !== '' && !Number.isNaN(aNumero(peso));
+  const alturaValida = altura.trim() !== '' && !Number.isNaN(aNumero(altura));
 
   async function elegirFoto(origen) {
     const permiso =
@@ -46,14 +50,14 @@ export default function RegistrarFisicoModal({ visible, alturaInicial, onGuardar
     setGuardando(true);
     try {
       const measurements = {};
-      if (cintura.trim() !== '' && !Number.isNaN(Number(cintura))) measurements.cintura = Number(cintura);
-      if (brazo.trim() !== '' && !Number.isNaN(Number(brazo))) measurements.brazo = Number(brazo);
-      if (pierna.trim() !== '' && !Number.isNaN(Number(pierna))) measurements.pierna = Number(pierna);
+      if (cintura.trim() !== '' && !Number.isNaN(aNumero(cintura))) measurements.cintura = aNumero(cintura);
+      if (brazo.trim() !== '' && !Number.isNaN(aNumero(brazo))) measurements.brazo = aNumero(brazo);
+      if (pierna.trim() !== '' && !Number.isNaN(aNumero(pierna))) measurements.pierna = aNumero(pierna);
 
       await onGuardar({
         date: fecha,
-        weight: Number(peso),
-        height: Number(altura),
+        weight: aNumero(peso),
+        height: aNumero(altura),
         photoUri,
         measurements: Object.keys(measurements).length > 0 ? measurements : null,
       });

@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet, Alert } from 'react-native';
 import { createFolder, deleteFolder } from '../lib/exercises';
 import { getRecentWorkouts } from '../lib/workouts';
 import { calcularDuracionMinutos, calcularVolumenTotal } from '../lib/workoutsCalculo';
 import CrearCarpetaModal from './CrearCarpetaModal';
 import BibliotecaEjerciciosModal from './BibliotecaEjerciciosModal';
+import DetalleEntrenamientoModal from './DetalleEntrenamientoModal';
 import { colors } from '../theme/colors';
 
 function formatFecha(fechaStr) {
@@ -17,19 +18,27 @@ export default function EjerciciosDashboard({ userId, folders, ancho, onEmpezar,
   const [bibliotecaVisible, setBibliotecaVisible] = useState(false);
   const [carpetaAbierta, setCarpetaAbierta] = useState(null);
   const [recientes, setRecientes] = useState([]);
+  const [entrenamientoAbierto, setEntrenamientoAbierto] = useState(null);
+  const [detalleVisible, setDetalleVisible] = useState(false);
+
+  const cargarRecientes = useCallback(async () => {
+    try {
+      const data = await getRecentWorkouts(userId, 5);
+      setRecientes(data);
+    } catch (e) {
+      console.error('Error al cargar entrenamientos recientes:', e.message, e);
+      Alert.alert('Error', 'No se pudieron cargar los entrenamientos recientes.');
+    }
+  }, [userId]);
 
   useEffect(() => {
-    async function cargarRecientes() {
-      try {
-        const data = await getRecentWorkouts(userId, 5);
-        setRecientes(data);
-      } catch (e) {
-        console.error('Error al cargar entrenamientos recientes:', e.message, e);
-        Alert.alert('Error', 'No se pudieron cargar los entrenamientos recientes.');
-      }
-    }
     cargarRecientes();
-  }, [userId]);
+  }, [cargarRecientes]);
+
+  function abrirDetalleEntrenamiento(workout) {
+    setEntrenamientoAbierto(workout);
+    setDetalleVisible(true);
+  }
 
   async function handleCrearCarpeta(nombre) {
     try {
@@ -117,13 +126,20 @@ export default function EjerciciosDashboard({ userId, folders, ancho, onEmpezar,
         const entradasConTipo = logs.map((log) => ({ type: log.exercises.type, sets: log.sets }));
         const volumen = calcularVolumenTotal(entradasConTipo);
         return (
-          <View key={workout.id} style={styles.tarjetaReciente}>
-            <Text style={styles.recienteFecha}>{formatFecha(workout.started_at)}</Text>
-            <Text style={styles.recienteDetalle}>
-              {duracion} min · {logs.length} ejercicio{logs.length === 1 ? '' : 's'}
-              {volumen > 0 ? ` · ${volumen}kg` : ''}
-            </Text>
-          </View>
+          <Pressable
+            key={workout.id}
+            style={styles.tarjetaReciente}
+            onPress={() => abrirDetalleEntrenamiento(workout)}
+          >
+            <View>
+              <Text style={styles.recienteFecha}>{formatFecha(workout.started_at)}</Text>
+              <Text style={styles.recienteDetalle}>
+                {duracion} min · {logs.length} ejercicio{logs.length === 1 ? '' : 's'}
+                {volumen > 0 ? ` · ${volumen}kg` : ''}
+              </Text>
+            </View>
+            <Text style={styles.flecha}>›</Text>
+          </Pressable>
         );
       })}
 
@@ -141,6 +157,12 @@ export default function EjerciciosDashboard({ userId, folders, ancho, onEmpezar,
         ancho={ancho}
         onClose={() => setBibliotecaVisible(false)}
         onCambio={onRecargarFolders}
+      />
+      <DetalleEntrenamientoModal
+        visible={detalleVisible}
+        workout={entrenamientoAbierto}
+        onClose={() => setDetalleVisible(false)}
+        onBorrado={cargarRecientes}
       />
     </ScrollView>
   );
@@ -188,7 +210,15 @@ const styles = StyleSheet.create({
   },
   bibliotecaTexto: { fontFamily: 'Inter_600SemiBold', fontSize: 15, color: colors.textPrimary },
   flecha: { fontSize: 22, color: colors.textTertiary },
-  tarjetaReciente: { backgroundColor: colors.surface, borderRadius: 14, padding: 14, marginBottom: 8 },
+  tarjetaReciente: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.surface,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 8,
+  },
   recienteFecha: { fontFamily: 'Inter_600SemiBold', color: colors.textPrimary, fontSize: 14 },
   recienteDetalle: { fontFamily: 'Inter_400Regular', color: colors.textSecondary, fontSize: 13, marginTop: 2 },
 });

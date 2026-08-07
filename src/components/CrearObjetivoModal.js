@@ -3,6 +3,10 @@ import { Modal, View, Text, TextInput, Pressable, StyleSheet, Alert, Platform } 
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { colors } from '../theme/colors';
 
+function aNumero(texto) {
+  return Number(String(texto).replace(',', '.'));
+}
+
 export default function CrearObjetivoModal({ visible, pesoInicial, onGuardar, onClose }) {
   const [tipo, setTipo] = useState('bajar');
   const [valor, setValor] = useState('');
@@ -15,17 +19,17 @@ export default function CrearObjetivoModal({ visible, pesoInicial, onGuardar, on
     if (visible) setInicial(pesoInicial ? String(pesoInicial) : '');
   }, [visible, pesoInicial]);
 
-  const valorValido = valor.trim() !== '' && !Number.isNaN(Number(valor));
-  const inicialValido = inicial.trim() !== '' && !Number.isNaN(Number(inicial));
+  const valorValido = valor.trim() !== '' && !Number.isNaN(aNumero(valor));
+  const inicialValido = inicial.trim() !== '' && !Number.isNaN(aNumero(inicial));
 
   async function handleGuardar() {
     setGuardando(true);
     try {
       await onGuardar({
         type: tipo,
-        targetValue: Number(valor),
+        targetValue: aNumero(valor),
         targetDate: mostrarFecha ? fecha : null,
-        startValue: Number(inicial),
+        startValue: aNumero(inicial),
       });
       setValor('');
       setMostrarFecha(false);

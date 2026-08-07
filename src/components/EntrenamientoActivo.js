@@ -35,15 +35,25 @@ export default function EntrenamientoActivo({ userId, workout, entradasIniciales
   }
 
   function agregarEjercicioAlWorkout(ejercicio) {
-    setEntradas((actual) => [...actual, { exercise: ejercicio, sets: [], logId: null }]);
+    setEntradas((actual) => {
+      if (actual.some((e) => e.exercise.id === ejercicio.id)) {
+        Alert.alert('Ya está agregado', `"${ejercicio.name}" ya está en este entrenamiento.`);
+        return actual;
+      }
+      return [...actual, { exercise: ejercicio, sets: [], logId: null }];
+    });
+  }
+
+  function numeroConComa(texto) {
+    return Number(String(texto).replace(',', '.')) || 0;
   }
 
   async function agregarSerie(entrada) {
     const pendiente = inputsPendientes[entrada.exercise.id] || {};
     const nuevoSet =
       entrada.exercise.type === 'tiempo'
-        ? { duration_seg: Number(pendiente.duration_seg) || 0 }
-        : { weight: Number(pendiente.weight) || 0, reps: Number(pendiente.reps) || 0 };
+        ? { duration_seg: numeroConComa(pendiente.duration_seg) }
+        : { weight: numeroConComa(pendiente.weight), reps: numeroConComa(pendiente.reps) };
     const nuevosSets = [...entrada.sets, nuevoSet];
     try {
       const guardado = await upsertWorkoutExerciseLog(workout.id, entrada.exercise.id, userId, {

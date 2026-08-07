@@ -46,7 +46,7 @@ export async function getActiveWorkout(userId) {
 export async function getRecentWorkouts(userId, limite) {
   const { data, error } = await supabase
     .from('workouts')
-    .select('id, started_at, ended_at, exercise_logs(sets, exercises(type))')
+    .select('id, started_at, ended_at, exercise_logs(sets, exercises(name, type))')
     .eq('user_id', userId)
     .not('ended_at', 'is', null)
     .order('started_at', { ascending: false })

@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { View, ActivityIndicator, StyleSheet, Dimensions } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, Dimensions, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
 import { getFolders, getExercises } from '../lib/exercises';
@@ -27,17 +27,23 @@ export default function EjerciciosScreen() {
       let cancelado = false;
       supabase.auth.getUser().then(async ({ data: { user } }) => {
         if (cancelado) return;
-        setUserId(user.id);
-        await cargarFolders(user.id);
-        const activo = await getActiveWorkout(user.id);
-        if (cancelado) return;
-        if (activo) {
-          const logs = await getWorkoutExerciseLogs(activo.id);
+        try {
+          setUserId(user.id);
+          await cargarFolders(user.id);
+          const activo = await getActiveWorkout(user.id);
           if (cancelado) return;
-          setWorkoutActivo(activo);
-          setEntradasWorkout(logs.map((log) => ({ exercise: log.exercises, sets: log.sets, logId: log.id })));
+          if (activo) {
+            const logs = await getWorkoutExerciseLogs(activo.id);
+            if (cancelado) return;
+            setWorkoutActivo(activo);
+            setEntradasWorkout(logs.map((log) => ({ exercise: log.exercises, sets: log.sets, logId: log.id })));
+          }
+        } catch (e) {
+          console.error('Error al cargar Ejercicios:', e.message, e);
+          if (!cancelado) Alert.alert('Error', 'No se pudo cargar, intentá de nuevo.');
+        } finally {
+          if (!cancelado) setLoading(false);
         }
-        if (!cancelado) setLoading(false);
       });
       return () => {
         cancelado = true;
@@ -46,14 +52,19 @@ export default function EjerciciosScreen() {
   );
 
   async function empezarEntrenamiento(folderId) {
-    const workout = await startWorkout(userId, folderId);
-    let entradas = [];
-    if (folderId !== null) {
-      const ejerciciosRutina = await getExercises(userId, folderId);
-      entradas = ejerciciosRutina.map((ejercicio) => ({ exercise: ejercicio, sets: [], logId: null }));
+    try {
+      const workout = await startWorkout(userId, folderId);
+      let entradas = [];
+      if (folderId !== null) {
+        const ejerciciosRutina = await getExercises(userId, folderId);
+        entradas = ejerciciosRutina.map((ejercicio) => ({ exercise: ejercicio, sets: [], logId: null }));
+      }
+      setWorkoutActivo(workout);
+      setEntradasWorkout(entradas);
+    } catch (e) {
+      console.error('Error al empezar entrenamiento:', e.message, e);
+      Alert.alert('Error', 'No se pudo empezar el entrenamiento, intentá de nuevo.');
     }
-    setWorkoutActivo(workout);
-    setEntradasWorkout(entradas);
   }
 
   function volverAlDashboard() {
