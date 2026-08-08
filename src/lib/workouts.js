@@ -55,6 +55,17 @@ export async function getRecentWorkouts(userId, limite) {
   return data;
 }
 
+export async function getAllFinishedWorkouts(userId) {
+  const { data, error } = await supabase
+    .from('workouts')
+    .select('id, started_at, ended_at, exercise_logs(sets, exercises(name, type))')
+    .eq('user_id', userId)
+    .not('ended_at', 'is', null)
+    .order('started_at', { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
 export async function upsertWorkoutExerciseLog(workoutId, exerciseId, userId, { date, sets }) {
   const { data, error } = await supabase
     .from('exercise_logs')
