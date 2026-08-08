@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const CLAVE_HORA = 'hora_recordatorio';
 const HORA_DEFAULT = '20:00';
+const CLAVE_ACTIVADAS = 'notificaciones_activadas';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -29,8 +30,20 @@ export async function setHoraRecordatorio(hora) {
   await AsyncStorage.setItem(CLAVE_HORA, hora);
 }
 
+export async function getNotificacionesActivadas() {
+  const guardado = await AsyncStorage.getItem(CLAVE_ACTIVADAS);
+  return guardado !== 'false';
+}
+
+export async function setNotificacionesActivadas(activadas) {
+  await AsyncStorage.setItem(CLAVE_ACTIVADAS, activadas ? 'true' : 'false');
+}
+
 export async function sincronizarRecordatorios(checkins) {
   await Notifications.cancelAllScheduledNotificationsAsync();
+
+  const activadas = await getNotificacionesActivadas();
+  if (!activadas) return;
 
   let permiso = await Notifications.getPermissionsAsync();
   if (permiso.status !== 'granted') {

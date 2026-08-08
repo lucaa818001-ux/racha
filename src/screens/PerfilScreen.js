@@ -1,12 +1,18 @@
 import { useCallback, useEffect, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Platform, ScrollView, Image, Alert } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Platform, ScrollView, Image, Alert, Switch } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../lib/supabase';
 import { getCheckinsForRange, getRachaMaxima, getSignedPhotoUrl } from '../lib/checkins';
 import { calcularRachaActual } from '../lib/rachaCalculo';
-import { getHoraRecordatorio, setHoraRecordatorio, sincronizarRecordatorios } from '../lib/recordatorio';
+import {
+  getHoraRecordatorio,
+  setHoraRecordatorio,
+  sincronizarRecordatorios,
+  getNotificacionesActivadas,
+  setNotificacionesActivadas,
+} from '../lib/recordatorio';
 import { getBodyLogsForRange } from '../lib/bodyLogs';
 import { getActiveGoal, getGoalHistory } from '../lib/goals';
 import { calcularProgreso } from '../lib/objetivoCalculo';
@@ -69,6 +75,7 @@ export default function PerfilScreen() {
   const [fotoSeleccionada, setFotoSeleccionada] = useState(null);
   const [editarNombreVisible, setEditarNombreVisible] = useState(false);
   const [hora, setHora] = useState('20:00');
+  const [notificacionesActivadas, setNotificacionesActivadasState] = useState(true);
 
   const cargarDatos = useCallback(async (user) => {
     setNombre(user.user_metadata?.nombre || '');
@@ -110,7 +117,9 @@ export default function PerfilScreen() {
     const workouts = await getAllFinishedWorkouts(user.id);
     setTotalEntrenamientos(workouts.length);
     const volumen = workouts.reduce((total, w) => {
-      const entradas = (w.exercise_logs ?? []).map((log) => ({ type: log.exercises.type, sets: log.sets }));
+      const entradas = (w.exercise_logs ?? [])
+        .filter((log) => log.exercises)
+        .map((log) => ({ type: log.exercises.type, sets: log.sets }));
       return total + calcularVolumenTotal(entradas);
     }, 0);
     setVolumenTotal(volumen);
@@ -132,6 +141,8 @@ export default function PerfilScreen() {
           setUserId(user.id);
           const h = await getHoraRecordatorio();
           if (!cancelado) setHora(h);
+          const activadas = await getNotificacionesActivadas();
+          if (!cancelado) setNotificacionesActivadasState(activadas);
           await cargarDatos(user);
         } catch (e) {
           console.error('Error al cargar Perfil:', e.message, e);
@@ -159,6 +170,23 @@ export default function PerfilScreen() {
       new Date(hoy.getFullYear(), 11, 31)
     );
     await sincronizarRecordatorios(checkins);
+  }
+
+  async function alCambiarNotificaciones(valor) {
+    setNotificacionesActivadasState(valor);
+    try {
+      await setNotificacionesActivadas(valor);
+      const hoy = new Date();
+      const checkins = await getCheckinsForRange(
+        userId,
+        new Date(hoy.getFullYear(), 0, 1),
+        new Date(hoy.getFullYear(), 11, 31)
+      );
+      await sincronizarRecordatorios(checkins);
+    } catch (e) {
+      console.error('Error al cambiar notificaciones:', e.message, e);
+      Alert.alert('Error', 'No se pudo guardar, intentá de nuevo.');
+    }
   }
 
   async function handleGuardarNombre(nuevoNombre) {
@@ -298,15 +326,25 @@ export default function PerfilScreen() {
 
       <Text style={styles.subtitulo}>Configuración</Text>
       <View style={styles.fila}>
-        <Text style={styles.filaTexto}>Recordatorio</Text>
-        <DateTimePicker
-          value={valorPicker}
-          mode="time"
-          display={Platform.OS === 'ios' ? 'compact' : 'default'}
-          themeVariant="dark"
-          onChange={alCambiarHora}
+        <Text style={styles.filaTexto}>Notificaciones</Text>
+        <Switch
+          value={notificacionesActivadas}
+          onValueChange={alCambiarNotificaciones}
+          trackColor={{ true: colors.cobalto }}
         />
       </View>
+      {notificacionesActivadas && (
+        <View style={styles.fila}>
+          <Text style={styles.filaTexto}>Recordatorio</Text>
+          <DateTimePicker
+            value={valorPicker}
+            mode="time"
+            display={Platform.OS === 'ios' ? 'compact' : 'default'}
+            themeVariant="dark"
+            onChange={alCambiarHora}
+          />
+        </View>
+      )}
       <Pressable style={styles.signOutButton} onPress={() => supabase.auth.signOut()}>
         <Text style={styles.signOutText}>Cerrar sesión</Text>
       </Pressable>
